@@ -30,8 +30,8 @@
     </message>
     <message>
         <location filename="../sqlexport.cpp" line="284"/>
-        <source>-- File generated with SQLiteStudio v%1 on %2</source>
-        <translation>-- SQLiteStudio v%1 生成的文件，%2</translation>
+        <source>-- File generated with Letos v%1 on %2</source>
+        <translation>-- 使用 Letos v%1 在 %2 上生成的文件</translation>
     </message>
     <message>
         <location filename="../sqlexport.cpp" line="288"/>

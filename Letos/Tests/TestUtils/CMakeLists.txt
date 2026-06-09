@@ -36,7 +36,7 @@ if(NOT CUSTOM_SQLITE3)
 endif()
 target_link_libraries(TestUtils PUBLIC
     Qt::Core
-    SQLite::SQLite3
+    SQLite3::SQLite3
     coreLetos
 )
 target_link_libraries(TestUtils PUBLIC

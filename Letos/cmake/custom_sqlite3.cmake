@@ -24,8 +24,8 @@ if(CUSTOM_SQLITE3)
 	target_include_directories(SQLiteHeaders INTERFACE
 		"${_sqlite_include}"
 	)
-	add_library(SQLite::SQLite3 UNKNOWN IMPORTED)
-	set_target_properties(SQLite::SQLite3 PROPERTIES
+	add_library(SQLite3::SQLite3 UNKNOWN IMPORTED)
+	set_target_properties(SQLite3::SQLite3 PROPERTIES
 		IMPORTED_LOCATION "${_sqlite_lib}"
 		INTERFACE_INCLUDE_DIRECTORIES "${_sqlite_include}"
 	)

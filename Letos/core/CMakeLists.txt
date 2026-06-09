@@ -422,7 +422,7 @@ target_compile_definitions(coreLetos PRIVATE
     CORE_LIBRARY
 )
 target_link_libraries(coreLetos PUBLIC
-    SQLite::SQLite3
+    SQLite3::SQLite3
 )
 target_link_libraries(coreLetos PRIVATE
     Qt::Core

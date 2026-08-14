@@ -293,5 +293,7 @@
         <file>img/results_on_right.svg</file>
         <file>img/command_palette.svg</file>
         <file>img/minify.svg</file>
+        <file>img/shadow_table.svg</file>
+        <file>img/hidden_column.svg</file>
     </qresource>
 </RCC>

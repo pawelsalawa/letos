@@ -21,10 +21,14 @@ class API_EXPORT SqliteColumnType : public SqliteStatement
         bool isScaleDouble();
         TokenList rebuildTokensFromContents(bool replaceStatementTokens) const;
         DataType toDataType() const;
+        QString detokenizeWithoutHidden() const;
+
+        static QString removeHiddenFromTypeName(const QString& typeName, bool* isHidden = nullptr);
 
         QString name = QString();
         QVariant scale = QVariant(); // first size number
         QVariant precision = QVariant(); // second size number
+        bool hidden = false;
 };
 
 typedef QSharedPointer<SqliteColumnType> SqliteColumnTypePtr;

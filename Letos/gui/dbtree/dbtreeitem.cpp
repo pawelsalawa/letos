@@ -363,6 +363,16 @@ bool DbTreeItem::getRestoredExpandState() const
     return data(DataRole::EXPAND_STATE_RESTORED).toBool();
 }
 
+void DbTreeItem::setShadowTable(bool shadow)
+{
+    setData(shadow, DataRole::SHADOW_TABLE);
+}
+
+bool DbTreeItem::isShadowTable() const
+{
+    return data(DataRole::SHADOW_TABLE).toBool();
+}
+
 void DbTreeItem::init()
 {
     Type type = getType();

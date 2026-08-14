@@ -190,6 +190,7 @@ set(PROJECT_HEADERS
     commandpalette/cpmdiwindowsprovider.h
     commandpalette/cpglobalactionsprovider.h
     common/htmlbutton.h
+    common/iconpositionitemdelegate.h
 )
 
 set(PROJECT_SOURCES
@@ -374,6 +375,7 @@ set(PROJECT_SOURCES
     commandpalette/cpmdiwindowsprovider.cpp
     commandpalette/cpglobalactionsprovider.cpp
     common/htmlbutton.cpp
+    common/iconpositionitemdelegate.cpp
 )
 
 qt_add_resources(PROJECT_SOURCES

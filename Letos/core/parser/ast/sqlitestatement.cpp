@@ -18,7 +18,7 @@ SqliteStatement::~SqliteStatement()
 {
 }
 
-QString SqliteStatement::detokenize()
+QString SqliteStatement::detokenize() const
 {
     return tokens.detokenize();
 }

@@ -1,4 +1,5 @@
 #include "tablewindow.h"
+#include "common/iconpositionitemdelegate.h"
 #include "ui_tablewindow.h"
 #include "services/dbmanager.h"
 #include "services/notifymanager.h"
@@ -153,6 +154,7 @@ void TableWindow::init()
     ui->structureView->horizontalHeader()->setSectionsClickable(false);
     ui->structureView->verticalHeader()->setSectionsClickable(false);
     constraintColumnsDelegate = new CenteredIconItemDelegate(this);
+    iconPositionDelegate = new IconPositionItemDelegate(this);
 
 #ifdef Q_OS_MACX
     QStyle *fusion = QStyleFactory::create("Fusion");
@@ -514,6 +516,7 @@ void TableWindow::defineCurrentContextDb()
 
 void TableWindow::initDbAndTable()
 {
+    ui->structureView->setItemDelegateForColumn(0, iconPositionDelegate);
     for (int colIdx = 2; colIdx < 9; colIdx++)
         ui->structureView->setItemDelegateForColumn(colIdx, constraintColumnsDelegate);
 

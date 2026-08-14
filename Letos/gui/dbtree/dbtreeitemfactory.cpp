@@ -16,6 +16,13 @@ DbTreeItem *DbTreeItemFactory::createTable(const QString &name, QObject *parent)
     return new DbTreeItem(DbTreeItem::Type::TABLE, ICONS.TABLE, name, parent);
 }
 
+DbTreeItem* DbTreeItemFactory::createShadowTable(const QString& name, QObject* parent)
+{
+    DbTreeItem* item = new DbTreeItem(DbTreeItem::Type::TABLE, ICONS.SHADOW_TABLE, name, parent);
+    item->setShadowTable(true);
+    return item;
+}
+
 DbTreeItem* DbTreeItemFactory::createVirtualTable(const QString& name, QObject* parent)
 {
     return new DbTreeItem(DbTreeItem::Type::VIRTUAL_TABLE, ICONS.VIRTUAL_TABLE, name, parent);
@@ -41,9 +48,9 @@ DbTreeItem *DbTreeItemFactory::createColumn(const QString &name, QObject *parent
     return new DbTreeItem(DbTreeItem::Type::COLUMN, ICONS.COLUMN, name, parent);
 }
 
-DbTreeItem* DbTreeItemFactory::createColumn(const QString& name, const QString& type, QObject* parent)
+DbTreeItem* DbTreeItemFactory::createColumn(const QString& name, const QString& type, bool hidden, QObject* parent)
 {
-    auto item = new DbTreeItem(DbTreeItem::Type::COLUMN, ICONS.COLUMN, name, parent);
+    auto item = new DbTreeItem(DbTreeItem::Type::COLUMN, hidden ? ICONS.HIDDEN_COLUMN : ICONS.COLUMN, name, parent);
     item->setColumnType(type);
     return item;
 }

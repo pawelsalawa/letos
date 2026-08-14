@@ -749,6 +749,7 @@ void ColumnDialog::setColumn(SqliteCreateTable::Column* value)
     constraintsModel->setColumn(column.data());
 
     ui->name->setText(value->name);
+    ui->hiddenCheck->setChecked(value->type && value->type->hidden);
 
     SqliteCreateTable* createTable = dynamic_cast<SqliteCreateTable*>(value->parentStatement());
     if (createTable->strict)
@@ -854,7 +855,7 @@ void ColumnDialog::updateDataType()
     QString typeTxt = ui->typeCombo->currentText();
     QString scaleTxt = ui->scale->getValue().toString();
     QString precisionTxt = ui->precision->getValue().toString();
-    if (!typeTxt.isEmpty())
+    if (!typeTxt.isEmpty() || ui->hiddenCheck->isChecked())
     {
         if (!column->type)
         {
@@ -863,6 +864,7 @@ void ColumnDialog::updateDataType()
         }
 
         column->type->name = typeTxt;
+        column->type->hidden = ui->hiddenCheck->isChecked();
 
         if (!scaleTxt.isEmpty())
             column->type->scale = ui->scale->getValue();
@@ -881,4 +883,5 @@ void ColumnDialog::updateDataType()
         delete column->type;
         column->type = nullptr;
     }
+
 }

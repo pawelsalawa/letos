@@ -1,5 +1,8 @@
 # ChangeLog
 
+### 4.1.0
+- ADDED: #3949 Support for `HIDDEN` columns. Now they have their own icon, are marked with icon on Structure tab and the `HIDDEN` attribute can be toggled on/off in the Column Dialog.
+
 ### 4.0.3
 - ADDED: #5794 Added glowing effect for entities & arrows being in relation with the selected entity. Can be turned off/on.
 - BUGFIX: #5794 Scene area once again refreshes after entity is moved out of the scene, so it's possible to scroll to see it.

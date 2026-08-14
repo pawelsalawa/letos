@@ -347,6 +347,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="hiddenCheck">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hidden columns are omitted from &lt;code&gt;SELECT *&lt;/code&gt; and implicit &lt;code&gt;INSERT&lt;/code&gt; column lists, but can still be accessed explicitly by name. They are commonly used by virtual tables as input parameters. See the SQLite documentation for details.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Hidden</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QDialogButtonBox" name="buttonBox">
         <property name="orientation">
          <enum>Qt::Orientation::Horizontal</enum>

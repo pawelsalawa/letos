@@ -3,6 +3,7 @@
 #include "iconmanager.h"
 #include "parser/ast/sqlitecreatetable.h"
 #include "uiconfig.h"
+#include "common/iconpositionitemdelegate.h"
 #include <QFont>
 #include <QDebug>
 #include <QMimeData>
@@ -54,6 +55,12 @@ QVariant TableStructureModel::data(const QModelIndex& index, int role) const
     {
         case TableStructureModel::Columns::NAME:
         {
+            if (role == IconPositionItemDelegate::DecorationPositionRole)
+                return static_cast<int>(QStyleOptionViewItem::Right);
+
+            if (role == Qt::DecorationRole && isColumnHidden(row))
+                return ICONS.EYE_CLOSED;
+
             if (role != Qt::DisplayRole)
                 break;
 
@@ -154,6 +161,12 @@ TableStructureModel::Columns TableStructureModel::getHeaderColumn(int colIdx) co
 bool TableStructureModel::isValidColumnIdx(int colIdx) const
 {
     return colIdx >= 0 && colIdx < 10;
+}
+
+bool TableStructureModel::isColumnHidden(int row) const
+{
+    SqliteColumnType* type = getColumn(row)->type;
+    return type && type->hidden;
 }
 
 SqliteCreateTable::Column* TableStructureModel::getColumn(int colIdx) const
@@ -350,7 +363,7 @@ QVariant TableStructureModel::getColumnName(int row) const
 QVariant TableStructureModel::getColumnType(int row) const
 {
     SqliteColumnType* type = getColumn(row)->type;
-    return type ? type->detokenize() : "";
+    return type ? type->detokenizeWithoutHidden() : "";
 }
 
 QVariant TableStructureModel::getColumnPk(int row) const
@@ -550,6 +563,10 @@ QString TableStructureModel::getToolTip(int row, Columns modelColumn) const
         return QString();
 
     SqliteCreateTable::Column* col = createTable->columns[row];
+
+    if (modelColumn == Columns::NAME && isColumnHidden(row))
+        return tooltipTpl.arg(ICONS.EYE_CLOSED.toUrl(), "", tr("This is a hidden column."));
+
     if (col->constraints.isEmpty() && createTable->constraints.isEmpty())
         return QString();
 

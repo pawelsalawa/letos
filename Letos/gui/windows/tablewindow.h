@@ -25,6 +25,8 @@ class CenteredIconItemDelegate;
 class ConstraintTabModel;
 class DbComboBox;
 
+
+class IconPositionItemDelegate;
 namespace Ui {
     class TableWindow;
 }
@@ -197,6 +199,7 @@ class GUI_API_EXPORT TableWindow : public MdiChild
         TableModifier* tableModifier = nullptr;
         bool modifyingThisTable = false;
         CenteredIconItemDelegate* constraintColumnsDelegate = nullptr;
+        IconPositionItemDelegate* iconPositionDelegate = nullptr;
         bool tabsMoving = false;
         bool disableCommitOnTabChange = false;
         DbComboBox* dbCombo = nullptr;

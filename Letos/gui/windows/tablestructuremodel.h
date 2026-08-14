@@ -58,6 +58,7 @@ class GUI_API_EXPORT TableStructureModel : public QAbstractTableModel
         int getHeaderColumnIdx(Columns headerColumn) const;
         bool isValidColumnIdx(int colIdx) const;
         bool doesColumnHasConstraint(SqliteCreateTable::Column* column, SqliteCreateTable::Column::Constraint::Type type);
+        bool isColumnHidden(int row) const;
         QString columnLabel(int column) const;
         QVariant getColumnName(int row) const;
         QVariant getColumnType(int row) const;

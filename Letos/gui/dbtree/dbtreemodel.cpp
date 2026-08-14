@@ -26,6 +26,7 @@
 const QString DbTreeModel::toolTipTableTmp = R"(<table>%1</table>)";
 const QString DbTreeModel::toolTipHdrRowTmp = R"(<tr><th><img src="%1" width="16" height="16"/></th><th colspan=2>%2</th></tr>)";
 const QString DbTreeModel::toolTipRowTmp = R"(<tr><td></td><td>%1</td><td align="right">%2</td></tr>)";
+const QString DbTreeModel::toolTipSecondaryHdrRowTmp = R"(<tr><td colspan=3><p align="center">%1</p></td></tr>)";
 const QString DbTreeModel::toolTipIconRowTmp = R"(<tr><td><img src="%1" width="16" height="16"/></td><td>%2</td><td align="right">%3</td></tr>)";
 const QString DbTreeModel::toolTipFooterRowTmp = R"(<tr><td></td><td colspan=2><p align="center"><i>%1</i></p></td></tr>)";
 
@@ -472,6 +473,7 @@ QString DbTreeModel::getToolTip(DbTreeItem* item) const
         case DbTreeItem::Type::DB:
             return getDbToolTip(item);
         case DbTreeItem::Type::TABLE:
+        case DbTreeItem::Type::VIRTUAL_TABLE:
             return getTableToolTip(item);
         default:
             break;
@@ -524,6 +526,11 @@ QString DbTreeModel::getTableToolTip(DbTreeItem* item) const
 
     QStringList rows;
     rows << toolTipHdrRowTmp.arg(ICONS.TABLE.getPath(), tr("Table : %1", "dbtree tooltip").arg(item->text()));
+
+    if (item->getType() == DbTreeItem::Type::VIRTUAL_TABLE)
+        rows << toolTipSecondaryHdrRowTmp.arg(tr("(virtual table)", "dbtree tooltip"));
+    else if (item->isShadowTable())
+        rows << toolTipSecondaryHdrRowTmp.arg(tr("(shadow table)", "dbtree tooltip"));
 
     QStandardItem* columnsItem = item->child(0);
     QStandardItem* indexesItem = item->child(1);
@@ -584,6 +591,7 @@ void DbTreeModel::refreshSchema(Db* db, QStandardItem *item)
     QStringList tables;
     QStringList views;
     QSet<QString> virtualTables;
+    QSet<QString> shadowTables;
 
     for (SchemaResolver::TableListItem& tableListItem : tableListItems)
     {
@@ -591,9 +599,13 @@ void DbTreeModel::refreshSchema(Db* db, QStandardItem *item)
         {
             case SchemaResolver::TableListItem::VIRTUAL_TABLE:
                 virtualTables << tableListItem.name;
-                [[fallthrough]];
-            case SchemaResolver::TableListItem::TABLE:
+                tables << tableListItem.name;
+                break;
             case SchemaResolver::TableListItem::SHADOW_TABLE:
+                shadowTables << tableListItem.name;
+                tables << tableListItem.name;
+                break;
+            case SchemaResolver::TableListItem::TABLE:
                 tables << tableListItem.name;
                 break;
             case SchemaResolver::TableListItem::VIEW:
@@ -604,7 +616,7 @@ void DbTreeModel::refreshSchema(Db* db, QStandardItem *item)
         }
     }
 
-    QList<QStandardItem*> tableItems = refreshSchemaTables(tables, virtualTables, sort);
+    QList<QStandardItem*> tableItems = refreshSchemaTables(tables, virtualTables, shadowTables, sort);
     QList<QStandardItem*> viewItems = refreshSchemaViews(views, sort);
     refreshSchemaBuild(item, tableItems, viewItems);
     populateChildItemsWithDb(item, db);
@@ -635,7 +647,7 @@ void DbTreeModel::collectExpandedState(QHash<QString, bool> &state, QStandardIte
         collectExpandedState(state, parentItem->child(i));
 }
 
-QList<QStandardItem *> DbTreeModel::refreshSchemaTables(const QStringList &tables, const QSet<QString>& virtualTables, bool sort)
+QList<QStandardItem *> DbTreeModel::refreshSchemaTables(const QStringList &tables, const QSet<QString>& virtualTables, const QSet<QString>& shadowTables, bool sort)
 {
     QStringList sortedTables = tables;
     if (sort)
@@ -646,6 +658,8 @@ QList<QStandardItem *> DbTreeModel::refreshSchemaTables(const QStringList &table
     {
         if (virtualTables.contains(table))
             items += DbTreeItemFactory::createVirtualTable(table, this);
+        else if (shadowTables.contains(table))
+            items += DbTreeItemFactory::createShadowTable(table, this);
         else
             items += DbTreeItemFactory::createTable(table, this);
     }
@@ -663,7 +677,11 @@ QList<QStandardItem*> DbTreeModel::refreshSchemaTableOrViewColumns(const QList<Q
 
     QList<QStandardItem*> items;
     for (const QPair<QString, QString>& column : sortedColumns)
-        items += DbTreeItemFactory::createColumn(column.first, column.second, this);
+    {
+        bool hidden = false;
+        QString typeName = SqliteColumnType::removeHiddenFromTypeName(column.second, &hidden);
+        items += DbTreeItemFactory::createColumn(column.first, typeName, hidden, this);
+    }
 
     return items;
 }

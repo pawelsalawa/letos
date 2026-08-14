@@ -86,7 +86,7 @@ class GUI_API_EXPORT DbTreeModel : public QStandardItemModel
         bool applyFilterRecursively(QStandardItem* parentItem, const QString& filter);
         void refreshSchema(Db* db, QStandardItem* item);
         void collectExpandedState(QHash<QString, bool>& state, QStandardItem* parentItem = nullptr);
-        QList<QStandardItem*> refreshSchemaTables(const QStringList &tables, const QSet<QString>& virtualTables, bool sort);
+        QList<QStandardItem*> refreshSchemaTables(const QStringList &tables, const QSet<QString>& virtualTables, const QSet<QString>& shadowTables, bool sort);
         QList<QStandardItem*> refreshSchemaTableOrViewColumns(const QList<QPair<QString, QString>>& columns);
         QList<QStandardItem*> refreshSchemaIndexes(const QStringList& indexes, bool sort);
         QList<QStandardItem*> refreshSchemaTriggers(const QStringList& triggers, bool sort);
@@ -116,6 +116,7 @@ class GUI_API_EXPORT DbTreeModel : public QStandardItemModel
 
         static const QString toolTipTableTmp;
         static const QString toolTipHdrRowTmp;
+        static const QString toolTipSecondaryHdrRowTmp;
         static const QString toolTipRowTmp;
         static const QString toolTipIconRowTmp;
         static const QString toolTipFooterRowTmp;

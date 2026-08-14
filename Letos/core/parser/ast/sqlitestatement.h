@@ -210,7 +210,7 @@ class API_EXPORT SqliteStatement : public QObject
         SqliteStatement(const SqliteStatement& other);
         virtual ~SqliteStatement();
 
-        QString detokenize();
+        QString detokenize() const;
         Range getRange();
 
         template <class T>

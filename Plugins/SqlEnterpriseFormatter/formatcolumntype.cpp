@@ -9,6 +9,9 @@ FormatColumnType::FormatColumnType(SqliteColumnType* colType) :
 
 void FormatColumnType::formatInternal()
 {
+    if (colType->hidden)
+        withId("HIDDEN");
+
     if (colType->name.isEmpty())
         return;
 

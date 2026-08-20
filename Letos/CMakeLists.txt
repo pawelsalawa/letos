@@ -34,10 +34,22 @@ include(letos_sqlite3)
 include(CTest)
 include(common)
 
-if(NOT WITH_PORTABLE)
-    set(SYS_PLUGINS_DIR_DEFAULT "${LETOS_INSTALL_PLUGINDIR}")
+if(WITH_PORTABLE)
+    # For portable builds, always use the install plugin dir from dirs.cmake.
+    set(SYS_PLUGINS_DIR "${LETOS_INSTALL_PLUGINDIR}" CACHE PATH "Path to system plugins directory")
+else()
+    # For non-portable builds: if the user did not provide SYS_PLUGINS_DIR on the cmake command line,
+    # set it to the install plugin dir and warn. If the user provided it, preserve and show it.
+    if(NOT DEFINED SYS_PLUGINS_DIR)
+        set(SYS_PLUGINS_DIR "${LETOS_INSTALL_PLUGINDIR}" CACHE PATH "Path to system plugins directory")
+        message(STATUS "SYS_PLUGINS_DIR: ${SYS_PLUGINS_DIR}")
+        message(WARNING "The SYS_PLUGINS_DIR cannot be changed by `--prefix` when executing `cmake --install .`. If it is not correct, change it now!")
+    else()
+        # Ensure the cache entry exists with the user-provided value (no warning).
+        set(SYS_PLUGINS_DIR "${SYS_PLUGINS_DIR}" CACHE PATH "Path to system plugins directory")
+    endif()
+    message(STATUS "SYS_PLUGINS_DIR: ${SYS_PLUGINS_DIR}")
 endif()
-set(SYS_PLUGINS_DIR "${SYS_PLUGINS_DIR_DEFAULT}" CACHE PATH "Path to system plugins directory")
 
 add_subdirectory(core)
 if(WITH_GUI)

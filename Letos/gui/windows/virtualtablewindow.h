@@ -73,6 +73,7 @@ class VirtualTableWindow : public MdiChild
         bool isWindowClosingBlocked() const override;
         QString getTable() const;
         Db* getDb() const;
+        void useCurrentTableAsBaseForNew();
 
     protected:
         void changeEvent(QEvent *e) override;
@@ -135,6 +136,10 @@ class VirtualTableWindow : public MdiChild
         void executionSuccessful();
         void executionFailed(const QString& errorText);
         void nameChanged();
+        void exportTable();
+        void importTable();
+        void populateTable();
+        void createSimilarTable();
         void tabChanged(int newTab);
         void updateStructureCommitState();
         void updateStructureToolbarState();

@@ -473,6 +473,14 @@ TableWindow *DbObjectDialogs::addTableSimilarTo(const QString &database, const Q
     return win;
 }
 
+VirtualTableWindow* DbObjectDialogs::addVirtualTableSimilarTo(const QString& database, const QString& table)
+{
+    VirtualTableWindow* win = new VirtualTableWindow(mdiArea, db, database, table);
+    mdiArea->addSubWindow(win);
+    win->useCurrentTableAsBaseForNew();
+    return win;
+}
+
 TableWindow* DbObjectDialogs::addTable()
 {
     TableWindow* win = new TableWindow(db, mdiArea);

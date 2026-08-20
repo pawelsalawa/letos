@@ -24,12 +24,15 @@ class GUI_API_EXPORT SqlDataSourceQueryModel : public SqlQueryModel
         void applyStrictFilter(const QString& value);
         void applyStrictFilter(const QStringList& values);
         void resetFilter();
+        void setSupportsReturningDelete(bool newSupportsReturningDelete); // virtual tables do not support it
 
     protected:
         class CommitDeleteQueryBuilder : public CommitUpdateQueryBuilder
         {
             public:
                 QString build();
+
+                bool noReturning = false;
         };
 
         class SelectColumnsQueryBuilder : public CommitUpdateQueryBuilder
@@ -75,6 +78,7 @@ class GUI_API_EXPORT SqlDataSourceQueryModel : public SqlQueryModel
         virtual QString getTableOrView() = 0;
 
         QString database;
+        bool supportsReturningDelete = true;
 };
 
 #endif // SQLDATASOURCEQUERYMODEL_H

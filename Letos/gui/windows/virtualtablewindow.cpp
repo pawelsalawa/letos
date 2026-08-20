@@ -2,7 +2,11 @@
 #include "common/iconpositionitemdelegate.h"
 #include "common/widgetcover.h"
 #include "datagrid/sqltablemodel.h"
+#include "dbobjectdialogs.h"
 #include "dialogs/ddlpreviewdialog.h"
+#include "dialogs/exportdialog.h"
+#include "dialogs/importdialog.h"
+#include "dialogs/populatedialog.h"
 #include "iconmanager.h"
 #include "services/codeformatter.h"
 #include "services/dbmanager.h"
@@ -82,6 +86,7 @@ void VirtualTableWindow::init()
     ui->argsEdit->setVirtualSqlExpression("CREATE VIRTUAL TABLE vt USING modname (%1);");
 
     dataModel = new SqlTableModel(this);
+    dataModel->setSupportsReturningDelete(false);
     ui->dataView->init(dataModel);
 
     initActions();
@@ -204,6 +209,17 @@ QString VirtualTableWindow::getTable() const
 Db* VirtualTableWindow::getDb() const
 {
     return db;
+}
+
+void VirtualTableWindow::useCurrentTableAsBaseForNew()
+{
+    newTable();
+    ui->tableNameEdit->clear();
+    columnsModel->clear();
+    ui->shadowTablesView->clear();
+    updateWindowTitle();
+    ui->tableNameEdit->setFocus();
+    updateAfterInit();
 }
 
 void VirtualTableWindow::changeEvent(QEvent* e)
@@ -641,6 +657,48 @@ void VirtualTableWindow::nameChanged()
 
     createTable->table = ui->tableNameEdit->text();
     updateDdlTab();
+}
+
+void VirtualTableWindow::exportTable()
+{
+    if (!ExportManager::isAnyPluginAvailable())
+    {
+        notifyError(tr("Cannot export, because no export plugin is loaded."));
+        return;
+    }
+
+    ExportDialog dialog(this);
+    dialog.setTableMode(db, table);
+    dialog.exec();
+}
+
+void VirtualTableWindow::importTable()
+{
+    if (!ImportManager::isAnyPluginAvailable())
+    {
+        notifyError(tr("Cannot import, because no import plugin is loaded."));
+        return;
+    }
+
+    ImportDialog dialog(this);
+    dialog.setDbAndTable(db, table);
+    dialog.setPreferTableOverFileName(true);
+    if (dialog.exec() == QDialog::Accepted && dataLoaded)
+        ui->dataView->refreshData(false);
+}
+
+void VirtualTableWindow::populateTable()
+{
+    PopulateDialog dialog(this);
+    dialog.setDbAndTable(db, table);
+    if (dialog.exec() == QDialog::Accepted && dataLoaded)
+        ui->dataView->refreshData(false);
+}
+
+void VirtualTableWindow::createSimilarTable()
+{
+    DbObjectDialogs dialog(db);
+    dialog.addVirtualTableSimilarTo(QString(), table);
 }
 
 void VirtualTableWindow::tabChanged(int newTab)

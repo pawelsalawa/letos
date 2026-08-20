@@ -72,6 +72,11 @@ void SqlDataSourceQueryModel::applyFilter(const QStringList& values, FilterValue
     executeQuery();
 }
 
+void SqlDataSourceQueryModel::setSupportsReturningDelete(bool value)
+{
+    supportsReturningDelete = value;
+}
+
 QString SqlDataSourceQueryModel::stringFilterValueProcessor(const QString& value)
 {
     static_qstring(pattern, "LIKE '%%1%'");
@@ -161,6 +166,7 @@ bool SqlDataSourceQueryModel::commitDeletedRow(const QList<SqlQueryItem*>& items
     CommitDeleteQueryBuilder queryBuilder;
     queryBuilder.setTableOrView(getTableOrView());
     queryBuilder.setRowId(rowId);
+    queryBuilder.noReturning = !supportsReturningDelete;
 
     QString sql = queryBuilder.build();
     QHash<QString, QVariant> args = queryBuilder.getQueryArgs();
@@ -179,7 +185,8 @@ bool SqlDataSourceQueryModel::commitDeletedRow(const QList<SqlQueryItem*>& items
     if (!SqlQueryModel::commitDeletedRow(itemsInRow, successfulCommitHandlers))
         qCritical() << "Could not delete row from SqlQueryView while committing row deletion.";
 
-    return commitDeletedRowPostprocess(itemsInRow, result->getAll().size(), successfulCommitHandlers);
+    quint64 rowsAffected = supportsReturningDelete ? result->getAll().size() : result->rowsAffected();
+    return commitDeletedRowPostprocess(itemsInRow, rowsAffected, successfulCommitHandlers);
 }
 
 QString SqlDataSourceQueryModel::getInsertSql(QStringList& colNameList, QStringList& sqlValues)
@@ -280,7 +287,8 @@ QString SqlDataSourceQueryModel::CommitDeleteQueryBuilder::build()
     QString conditions = RowIdConditionBuilder::build();
 
     static_qstring(sql, "DELETE FROM %1 WHERE %2 RETURNING 1;");
-    return sql.arg(dbAndTable, conditions);
+    static_qstring(sqlNoReturning, "DELETE FROM %1 WHERE %2;");
+    return (noReturning ? sqlNoReturning : sql).arg(dbAndTable, conditions);
 }
 
 

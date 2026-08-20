@@ -36,6 +36,7 @@ class GUI_API_EXPORT DbObjectDialogs : public QObject
         VirtualTableWindow* addVirtualTable();
         MdiChild* editTable(const QString& database, const QString& table);
         TableWindow* addTableSimilarTo(const QString& database, const QString& table);
+        VirtualTableWindow* addVirtualTableSimilarTo(const QString& database, const QString& table);
 
         void addIndex(const QString& table);
         void editIndex(const QString& index);

@@ -714,6 +714,10 @@ MdiWindow* MainWindow::restoreWindowSession(const QVariant &windowSessions)
 
     // Switch to session aware window, so we can use its session aware interface.
     MdiChild* mdiChild = reinterpret_cast<MdiChild*>(object);
+    RequiresExplicitInit* explicitInit = dynamic_cast<RequiresExplicitInit*>(mdiChild);
+    if (explicitInit)
+        explicitInit->init();
+
     if (mdiChild->isInvalid())
     {
         mdiChild->deleteLater();

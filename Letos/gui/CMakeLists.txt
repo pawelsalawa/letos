@@ -192,6 +192,7 @@ set(PROJECT_HEADERS
     common/htmlbutton.h
     common/iconpositionitemdelegate.h
     windows/virtualtablewindow.h
+    windows/abstracttablewindow.h
 )
 
 set(PROJECT_SOURCES
@@ -378,6 +379,7 @@ set(PROJECT_SOURCES
     common/htmlbutton.cpp
     common/iconpositionitemdelegate.cpp
     windows/virtualtablewindow.cpp
+    windows/abstracttablewindow.cpp
 )
 
 qt_add_resources(PROJECT_SOURCES

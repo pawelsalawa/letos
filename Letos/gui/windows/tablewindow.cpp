@@ -56,53 +56,46 @@
 CFG_KEYS_DEFINE(TableWindow)
 
 TableWindow::TableWindow(QWidget* parent) :
-    MdiChild(parent),
+    AbstractTableWindow(parent),
     ui(new Ui::TableWindow)
 {
-    init();
 }
 
 TableWindow::TableWindow(Db* db, QWidget* parent) :
-    MdiChild(parent),
-    db(db),
+    AbstractTableWindow(parent),
     ui(new Ui::TableWindow)
 {
+    this->db = db;
+
     newTable();
-    init();
-    initDbAndTable();
 }
 
 TableWindow::TableWindow(const TableWindow& win) :
-    MdiChild(win.parentWidget()),
-    db(win.db),
-    database(win.database),
-    table(win.table),
+    AbstractTableWindow(win.parentWidget()),
     ui(new Ui::TableWindow)
 {
-    init();
-    initDbAndTable();
+    this->db = win.db;
+    this->database = win.database;
+    this->table = win.table;
 }
 
 TableWindow::TableWindow(QWidget *parent, Db* db, const QString& database, const QString& table) :
-    MdiChild(parent),
-    db(db),
-    database(database),
-    table(table),
+    AbstractTableWindow(parent),
     ui(new Ui::TableWindow)
 {
-    init();
-    initDbAndTable();
+    this->db = db;
+    this->database = database;
+    this->table = table;
 }
 
 TableWindow::TableWindow(QWidget* parent, Db* db, const QString& database, const QString& table, bool existingTable) :
-    MdiChild(parent),
-    db(db),
-    database(database),
-    table(table),
-    ui(new Ui::TableWindow),
-    existingTable(existingTable)
+    AbstractTableWindow(parent),
+    ui(new Ui::TableWindow)
 {
-    init();
+    this->db = db;
+    this->database = database;
+    this->table = table;
+    this->existingTable = existingTable;
 }
 
 TableWindow::~TableWindow()
@@ -141,15 +134,11 @@ void TableWindow::removeAction(ExtActionPrototype* action, TableWindow::ToolBar 
     ExtActionContainer::removeAction<TableWindow>(action, toolbar);
 }
 
-void TableWindow::newTable()
-{
-    existingTable = false;
-    table = "";
-}
-
 void TableWindow::init()
 {
     ui->setupUi(this);
+    ABSTRACT_TABLE_WINDOW_COMMON_UI();
+
     ui->structureSplitter->setStretchFactor(0, 2);
     ui->structureView->horizontalHeader()->setSectionsClickable(false);
     ui->structureView->verticalHeader()->setSectionsClickable(false);
@@ -173,7 +162,7 @@ void TableWindow::init()
 
     initActions();
     updateTabsOrder();
-    createDbCombo();
+    initDbCombo();
 
     MAINWINDOW->installToolbarSizeWheelHandler(ui->structureToolBar);
     MAINWINDOW->installToolbarSizeWheelHandler(ui->tableConstraintsToolbar);
@@ -214,6 +203,7 @@ void TableWindow::init()
 
     updateFont();
     setupCoverWidget();
+    initDbAndTable();
     updateAfterInit();
 }
 
@@ -499,16 +489,6 @@ void TableWindow::setupDefShortcuts()
     BIND_SHORTCUTS(TableWindow, Action);
 }
 
-void TableWindow::executionSuccessful()
-{
-    dataLoaded = true;
-}
-
-void TableWindow::executionFailed(const QString& errorText)
-{
-    notifyError(tr("Could not load data for table %1. Error details: %2").arg(table, errorText));
-}
-
 void TableWindow::defineCurrentContextDb()
 {
     ui->dbCombo->setCurrentDb(db);
@@ -516,6 +496,9 @@ void TableWindow::defineCurrentContextDb()
 
 void TableWindow::initDbAndTable()
 {
+    if (table.isNull())
+        return;
+
     ui->structureView->setItemDelegateForColumn(0, iconPositionDelegate);
     for (int colIdx = 2; colIdx < 9; colIdx++)
         ui->structureView->setItemDelegateForColumn(colIdx, constraintColumnsDelegate);
@@ -617,14 +600,6 @@ void TableWindow::initDbAndTable()
             this, SLOT(updateTableConstraintsToolbarState()));
 }
 
-void TableWindow::setupCoverWidget()
-{
-    widgetCover = new WidgetCover(this);
-    widgetCover->initWithInterruptContainer();
-    widgetCover->hide();
-    connect(widgetCover, SIGNAL(cancelClicked()), structureExecutor, SLOT(interrupt()));
-}
-
 void TableWindow::parseDdl()
 {
     if (!resolveCreateTableStatement())
@@ -674,35 +649,6 @@ bool TableWindow::resolveOriginalCreateTableStatement()
 {
     originalCreateTable = SqliteCreateTablePtr::create(*createTable);
     return true;
-}
-
-void TableWindow::createDbCombo()
-{
-    ui->dbCombo->setFixedWidth(100);
-    ui->dbCombo->setToolTip(tr("Database"));
-    connect(ui->dbCombo, SIGNAL(verifiedDbChanged()), this, SLOT(dbChanged()));
-}
-
-void TableWindow::changeEvent(QEvent *e)
-{
-    QWidget::changeEvent(e);
-    switch (e->type()) {
-        case QEvent::LanguageChange:
-            ui->retranslateUi(this);
-            break;
-        default:
-            break;
-    }
-}
-
-void TableWindow::showEvent(QShowEvent* e)
-{
-    if (!shownAtLEastOnce)
-    {
-        applyInitialTab();
-        shownAtLEastOnce = true;
-    }
-    QWidget::showEvent(e);
 }
 
 QVariant TableWindow::saveSession()
@@ -764,38 +710,14 @@ Icon* TableWindow::getIconNameForMdiWindow()
     return ICONS.TABLE;
 }
 
-QString TableWindow::getTitleForMdiWindow()
+QString TableWindow::getTitleTemplateForMdiWindow()
 {
-    QString dbSuffix = (!db ? "" : (" (" + db->getName() + ")"));
-    if (existingTable)
-        return table + dbSuffix;
-
-    QStringList existingNames = MAINWINDOW->getMdiArea()->getWindowTitles();
-    if (existingNames.contains(windowTitle()))
-        return windowTitle();
-
-    // Generate new name
-    QString title = tr("New table %1").arg(newTableWindowNum++);
-    while (existingNames.contains(title))
-        title = tr("New table %1").arg(newTableWindowNum++);
-
-    title += dbSuffix;
-    return title;
-}
-
-Db* TableWindow::getDb() const
-{
-    return db;
+    return tr("New table %1");
 }
 
 SqliteCreateTablePtr TableWindow::getTableStatement() const
 {
     return createTable;
-}
-
-QString TableWindow::getTable() const
-{
-    return table;
 }
 
 void TableWindow::dbClosedFinalCleanup()
@@ -827,15 +749,7 @@ void TableWindow::checkIfTableDeleted(const QString& database, const QString& ob
             return;
     }
 
-    if (modifyingThisTable)
-        return;
-
-    if (object.compare(table, Qt::CaseInsensitive) == 0)
-    {
-        dbClosedFinalCleanup();
-        MDIAREA->enforceCurrentTaskSelectionAfterWindowClose();
-        getMdiWindow()->close();
-    }
+    AbstractTableWindow::checkIfTableDeleted(database, object, type);
 }
 
 void TableWindow::checkIfIndexDeleted(const QString& object)
@@ -869,22 +783,6 @@ void TableWindow::refreshStructure()
     updateTriggers();
 }
 
-bool TableWindow::commitStructure(bool skipWarning)
-{
-    if (!isModified())
-    {
-        qWarning() << "Called TableWindow::commitStructure(), but isModified() returned false.";
-        updateStructureCommitState();
-        return false;
-    }
-
-    if (!validate(skipWarning))
-        return false;
-
-    executeStructureChanges();
-    return true;
-}
-
 QString TableWindow::updateWindowAfterStructureChanged()
 {
     originalCreateTable = createTable;
@@ -903,68 +801,27 @@ QString TableWindow::updateWindowAfterStructureChanged()
     return oldTable;
 }
 
-void TableWindow::changesSuccessfullyCommitted()
+void TableWindow::changesSuccessfullyCommittedHandleDeps(const QString& oldTable)
 {
-    modifyingThisTable = false;
+    if (!tableModifier)
+        return;
 
-    QStringList sqls = structureExecutor->getQueries();
-    CFG->addDdlHistory(sqls.join("\n"), db->getName(), db->getPath());
-
-    widgetCover->hide();
-
-    QString oldTable = updateWindowAfterStructureChanged();
-    emit sessionValueChanged();
-
-    NotifyManager* notifyManager = NotifyManager::getInstance();
-    if (oldTable.compare(table, Qt::CaseInsensitive) == 0 || oldTable.isEmpty())
+    QList<QStringList> modifiedObjects = {
+        tableModifier->getModifiedTables(),
+        tableModifier->getModifiedIndexes(),
+        tableModifier->getModifiedTriggers(),
+        tableModifier->getModifiedViews()
+    };
+    for (const QStringList& objList : modifiedObjects)
     {
-        notifyInfo(tr("Committed changes for table '%1' successfully.").arg(table));
-    }
-    else
-    {
-        notifyInfo(tr("Committed changes for table '%1' (named before '%2') successfully.").arg(table, oldTable));
-        notifyManager->renamed(db, database, oldTable, table);
-    }
-    notifyManager->modified(db, database, table);
-
-    DBTREE->refreshSchema(db);
-
-    if (tableModifier)
-    {
-        QList<QStringList> modifiedObjects = {
-            tableModifier->getModifiedTables(),
-            tableModifier->getModifiedIndexes(),
-            tableModifier->getModifiedTriggers(),
-            tableModifier->getModifiedViews()
-        };
-        for (const QStringList& objList : modifiedObjects)
+        for (const QString& obj : objList)
         {
-            for (const QString& obj : objList)
-            {
-                if (obj.compare(oldTable, Qt::CaseInsensitive) == 0)
-                    continue;
+            if (obj.compare(oldTable, Qt::CaseInsensitive) == 0)
+                continue;
 
-                notifyManager->modified(db, database, obj);
-            }
+            NOTIFY_MANAGER->modified(db, database, obj);
         }
     }
-
-    ui->dataView->resetSorting();
-    if (ui->tabWidget->currentIndex() == getDataTabIdx())
-        ui->dataView->refreshData();
-
-    STATUSFIELD->releaseFadeOutFor(this);
-}
-
-void TableWindow::changesFailedToCommit(int errorCode, const QString& errorText)
-{
-    qDebug() << "TableWindow::changesFailedToCommit:" << errorCode << errorText;
-
-    modifyingThisTable = false;
-    widgetCover->hide();
-    notifyError(tr("Could not commit table structure. Error message: %1", "table window").arg(errorText));
-
-    STATUSFIELD->releaseFadeOutFor(this);
 }
 
 void TableWindow::rollbackStructure()
@@ -1206,29 +1063,11 @@ QString TableWindow::getCurrentTrigger() const
     return item->text();
 }
 
-void TableWindow::applyInitialTab()
-{
-    if (existingTable && !table.isNull() && CFG_UI.General.OpenTablesOnData.get())
-        ui->tabWidget->setCurrentIndex(getDataTabIdx());
-    else
-        ui->tabWidget->setCurrentIndex(getStructureTabIdx());
-}
-
 void TableWindow::resizeStructureViewColumns()
 {
     // Resize all except last one, to avoid shrinking the "extend to end" column.
     for (int c = 0, total = (ui->structureView->horizontalHeader()->count() - 1); c < total; ++c)
         ui->structureView->resizeColumnToContents(c);
-}
-
-int TableWindow::getDataTabIdx() const
-{
-    return ui->tabWidget->indexOf(ui->dataTab);
-}
-
-int TableWindow::getStructureTabIdx() const
-{
-    return ui->tabWidget->indexOf(ui->structureTab);
 }
 
 bool TableWindow::hasAnyPkDefined() const
@@ -1379,79 +1218,10 @@ void TableWindow::addCheck()
     addConstraint(ConstraintDialog::CHECK);
 }
 
-void TableWindow::exportTable()
-{
-    if (!ExportManager::isAnyPluginAvailable())
-    {
-        notifyError(tr("Cannot export, because no export plugin is loaded."));
-        return;
-    }
-
-    ExportDialog dialog(this);
-    dialog.setTableMode(db, table);
-    dialog.exec();
-}
-
-void TableWindow::importTable()
-{
-    if (!ImportManager::isAnyPluginAvailable())
-    {
-        notifyError(tr("Cannot import, because no import plugin is loaded."));
-        return;
-    }
-
-    ImportDialog dialog(this);
-    dialog.setDbAndTable(db, table);
-    dialog.setPreferTableOverFileName(true);
-    if (dialog.exec() == QDialog::Accepted && dataLoaded)
-        ui->dataView->refreshData(false);
-}
-
-void TableWindow::populateTable()
-{
-    PopulateDialog dialog(this);
-    dialog.setDbAndTable(db, table);
-    if (dialog.exec() == QDialog::Accepted && dataLoaded)
-        ui->dataView->refreshData(false);
-}
-
 void TableWindow::createSimilarTable()
 {
     DbObjectDialogs dialog(db);
     dialog.addTableSimilarTo(QString(), table);
-}
-
-void TableWindow::tabChanged(int newTab)
-{
-    if (disableCommitOnTabChange || tabsMoving)
-        return;
-
-    if (newTab == getDataTabIdx())
-    {
-        if (isModified())
-        {
-            QMessageBox box(QMessageBox::Question, tr("Uncommitted changes"),
-                            tr("There are uncommitted structure modifications."),
-                            QMessageBox::NoButton, this);
-            box.setInformativeText(tr("You cannot browse or edit data until you have "
-                                      "table structure settled.\n"
-                                      "Do you want to commit the structure, or do you want to go back to the structure tab?"));
-            box.addButton(tr("Go back to structure tab"), QMessageBox::RejectRole);
-            QAbstractButton* commitButton = box.addButton(tr("Commit modifications and browse data"),
-                                                          QMessageBox::ApplyRole);
-            box.exec();
-
-            if (box.clickedButton() == commitButton)
-                commitStructure(true);
-            else
-                focusStructureTab();
-
-            return;
-        }
-
-        if (!dataLoaded)
-            ui->dataView->refreshData(false);
-    }
 }
 
 void TableWindow::structureViewDoubleClicked(const QModelIndex &index)
@@ -1615,20 +1385,6 @@ void TableWindow::updateTriggersState()
     actionMap[DEL_TRIGGER]->setEnabled(editDel);
 }
 
-void TableWindow::nextTab()
-{
-    int idx = ui->tabWidget->currentIndex();
-    idx++;
-    ui->tabWidget->setCurrentIndex(idx);
-}
-
-void TableWindow::prevTab()
-{
-    int idx = ui->tabWidget->currentIndex();
-    idx--;
-    ui->tabWidget->setCurrentIndex(idx);
-}
-
 void TableWindow::updateIndexes()
 {
     ui->indexList->clear();
@@ -1760,28 +1516,6 @@ void TableWindow::delColumn(const QString& columnName)
     delColumn(colIdx);
 }
 
-void TableWindow::focusStructureTab()
-{
-    ui->tabWidget->setCurrentIndex(getStructureTabIdx());
-}
-
-void TableWindow::focusDataTab()
-{
-    ui->tabWidget->setCurrentIndex(getDataTabIdx());
-}
-
-void TableWindow::updateTabsOrder()
-{
-    tabsMoving = true;
-    ui->tabWidget->removeTab(getDataTabIdx());
-    int idx = 1;
-    if (CFG_UI.General.DataTabAsFirstInTables.get())
-        idx = 0;
-
-    ui->tabWidget->insertTab(idx, ui->dataTab, tr("Data"));
-    tabsMoving = false;
-}
-
 bool TableWindow::restoreSessionNextTime()
 {
     return existingTable && db && !DBLIST->isTemporary(db);
@@ -1811,27 +1545,6 @@ bool TableWindow::handleInitialFocus()
     return false;
 }
 
-bool TableWindow::isUncommitted() const
-{
-    return ui->dataView->isUncommitted() || isModified();
-}
-
-QString TableWindow::getQuitUncommittedConfirmMessage() const
-{
-    QString title = getMdiWindow()->windowTitle();
-    if (ui->dataView->isUncommitted() && isModified())
-        return tr("Table window \"%1\" has uncommitted structure modifications and data.").arg(title);
-    else if (ui->dataView->isUncommitted())
-        return tr("Table window \"%1\" has uncommitted data.").arg(title);
-    else if (isModified())
-        return tr("Table window \"%1\" has uncommitted structure modifications.").arg(title);
-    else
-    {
-        qCritical() << "Unhandled message case in TableWindow::getQuitUncommittedConfirmMessage().";
-        return QString();
-    }
-}
-
 void TableWindow::useCurrentTableAsBaseForNew()
 {
     newTable();
@@ -1841,50 +1554,9 @@ void TableWindow::useCurrentTableAsBaseForNew()
     updateAfterInit();
 }
 
-Db* TableWindow::getAssociatedDb() const
+QList<QTableView*> TableWindow::getViewsForFontUpdate() const
 {
-    return db;
-}
-
-QPair<Db*, QString> TableWindow::getSoftDbObjectAssociation() const
-{
-    if (!existingTable)
-        return {db, QString()};
-
-    return {db, table};
-}
-
-bool TableWindow::isWindowClosingBlocked() const
-{
-    return structureExecutor->isExecuting() || dataModel->isExecutionInProgress() ||
-        (ui->tabWidget->currentIndex() == getDataTabIdx() && !ui->dataView->getNavigationState());
-}
-
-void TableWindow::updateFont()
-{
-    QFont f = CFG_UI.Fonts.DataView.get();
-    QFontMetrics fm(f);
-
-    QTableView* views[] = {ui->structureView, ui->tableConstraintsView, ui->indexList, ui->triggerList};
-    for (QTableView* view : views)
-    {
-        view->setFont(f);
-        view->horizontalHeader()->setFont(f);
-        view->verticalHeader()->setFont(f);
-        view->verticalHeader()->setDefaultSectionSize(fm.height() + 4);
-    }
-}
-
-void TableWindow::dbChanged()
-{
-    if (db)
-        disconnect(db, SIGNAL(dbObjectDeleted(QString,QString,DbObjectType)), this, SLOT(checkIfTableDeleted(QString,QString,DbObjectType)));
-
-    db = ui->dbCombo->currentDb();
-    dataModel->setDb(db);
-
-    if (db)
-        connect(db, SIGNAL(dbObjectDeleted(QString,QString,DbObjectType)), this, SLOT(checkIfTableDeleted(QString,QString,DbObjectType)));
+    return {ui->structureView, ui->tableConstraintsView, ui->indexList, ui->triggerList};
 }
 
 void TableWindow::handlePossibleIdxOrTrgRename(Db* db, const QString& database, const QString& oldObject, const QString& newObject)

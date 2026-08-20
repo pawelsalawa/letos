@@ -15,28 +15,6 @@ ErdTableWindow::ErdTableWindow(Db* db, ErdEntity* entity, QWidget* parent)
     : TableWindow(parent, db, QString(), entity->getTableName(), entity->isExistingTable()),
       entity(entity)
 {
-    ui->dbCombo->setEnabled(false);
-    ui->dbCombo->setVisible(false);
-    ui->tabWidget->setTabVisible(ui->tabWidget->indexOf(ui->dataTab), false);
-    ui->tabWidget->setTabVisible(ui->tabWidget->indexOf(ui->indexesTab), false);
-    ui->tabWidget->setTabVisible(ui->tabWidget->indexOf(ui->triggersTab), false);
-
-    ui->structureToolBar->removeAction(actionMap[REFRESH_STRUCTURE]);
-    ui->structureToolBar->removeAction(actionMap[CREATE_SIMILAR]);
-    ui->structureToolBar->removeAction(actionMap[RESET_AUTOINCREMENT]);
-    ui->structureToolBar->removeAction(separatorAfterAction[MOVE_COLUMN_DOWN]);
-
-    QString commitText = tr("Apply changes to diagram", "ERD editor");
-    QString cancelText = tr("Abort changes", "ERD editor");
-    actionMap[COMMIT_STRUCTURE]->setText(commitText);
-    actionMap[COMMIT_STRUCTURE]->setToolTip(commitText);
-    actionMap[ROLLBACK_STRUCTURE]->setText(cancelText);
-    actionMap[ROLLBACK_STRUCTURE]->setToolTip(cancelText);
-
-    initDbAndTable();
-    updateAfterInit();
-
-    disableCommitOnTabChange = true;
 }
 
 ErdTableWindow::~ErdTableWindow()
@@ -156,6 +134,30 @@ ErdEntity* ErdTableWindow::getEntity() const
 {
     return entity;
 }
+
+void ErdTableWindow::init()
+{
+    TableWindow::init();
+
+    ui->dbCombo->setEnabled(false);
+    ui->dbCombo->setVisible(false);
+    ui->tabWidget->setTabVisible(ui->tabWidget->indexOf(ui->dataTab), false);
+    ui->tabWidget->setTabVisible(ui->tabWidget->indexOf(ui->indexesTab), false);
+    ui->tabWidget->setTabVisible(ui->tabWidget->indexOf(ui->triggersTab), false);
+
+    ui->structureToolBar->removeAction(actionMap[REFRESH_STRUCTURE]);
+    ui->structureToolBar->removeAction(actionMap[CREATE_SIMILAR]);
+    ui->structureToolBar->removeAction(actionMap[RESET_AUTOINCREMENT]);
+    ui->structureToolBar->removeAction(separatorAfterAction[MOVE_COLUMN_DOWN]);
+
+    QString commitText = tr("Apply changes to diagram", "ERD editor");
+    QString cancelText = tr("Abort changes", "ERD editor");
+    actionMap[COMMIT_STRUCTURE]->setText(commitText);
+    actionMap[COMMIT_STRUCTURE]->setToolTip(commitText);
+    actionMap[ROLLBACK_STRUCTURE]->setText(cancelText);
+    actionMap[ROLLBACK_STRUCTURE]->setToolTip(cancelText);
+
+    disableCommitOnTabChange = true;}
 
 void ErdTableWindow::nameEditedInline(const QString& newName)
 {

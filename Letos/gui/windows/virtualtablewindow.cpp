@@ -27,42 +27,36 @@
 CFG_KEYS_DEFINE(VirtualTableWindow)
 
 VirtualTableWindow::VirtualTableWindow(QWidget *parent) :
-    MdiChild(parent),
+    AbstractTableWindow(parent),
     ui(new Ui::VirtualTableWindow)
 {
-    init();
 }
 
 VirtualTableWindow::VirtualTableWindow(Db* db, QWidget* parent) :
-    MdiChild(parent),
-    db(db),
+    AbstractTableWindow(parent),
     ui(new Ui::VirtualTableWindow)
 {
+    this->db = db;
+
     newTable();
-    init();
-    initDbAndTable();
 }
 
 VirtualTableWindow::VirtualTableWindow(const VirtualTableWindow& win) :
-    MdiChild(win.parentWidget()),
-    db(win.db),
-    database(win.database),
-    table(win.table),
+    AbstractTableWindow(win.parentWidget()),
     ui(new Ui::VirtualTableWindow)
 {
-    init();
-    initDbAndTable();
+    this->db = win.db;
+    this->database = win.database;
+    this->table = win.table;
 }
 
 VirtualTableWindow::VirtualTableWindow(QWidget* parent, Db* db, const QString& database, const QString& table) :
-    MdiChild(parent),
-    db(db),
-    database(database),
-    table(table),
+    AbstractTableWindow(parent),
     ui(new Ui::VirtualTableWindow)
 {
-    init();
-    initDbAndTable();
+    this->db = db;
+    this->database = database;
+    this->table = table;
 }
 
 VirtualTableWindow::~VirtualTableWindow()
@@ -73,6 +67,7 @@ VirtualTableWindow::~VirtualTableWindow()
 void VirtualTableWindow::init()
 {
     ui->setupUi(this);
+    ABSTRACT_TABLE_WINDOW_COMMON_UI();
 
     ui->columnsView->horizontalHeader()->setSectionsClickable(false);
     iconPositionDelegate = new IconPositionItemDelegate(this);
@@ -91,7 +86,7 @@ void VirtualTableWindow::init()
 
     initActions();
     updateTabsOrder();
-    createDbCombo();
+    initDbCombo();
 
     MAINWINDOW->installToolbarSizeWheelHandler(ui->structureToolBar);
     MAINWINDOW->installToolbarSizeWheelHandler(ui->dataView->getToolBar(DataView::TOOLBAR_GRID));
@@ -125,11 +120,16 @@ void VirtualTableWindow::init()
 
     updateFont();
     setupCoverWidget();
+
+    initDbAndTable();
     updateAfterInit();
 }
 
 void VirtualTableWindow::initDbAndTable()
 {
+    if (table.isNull())
+        return;
+
     ui->columnsView->setItemDelegateForColumn(0, iconPositionDelegate);
 
     defineCurrentContextDb();
@@ -183,34 +183,6 @@ void VirtualTableWindow::staticInit()
     qRegisterMetaType<VirtualTableWindow>("VirtualTableWindow");
 }
 
-bool VirtualTableWindow::isUncommitted() const
-{
-    // TODO
-    return false;
-}
-
-QString VirtualTableWindow::getQuitUncommittedConfirmMessage() const
-{
-    // TODO
-    return QString();
-}
-
-bool VirtualTableWindow::isWindowClosingBlocked() const
-{
-    // TODO
-    return false;
-}
-
-QString VirtualTableWindow::getTable() const
-{
-    return table;
-}
-
-Db* VirtualTableWindow::getDb() const
-{
-    return db;
-}
-
 void VirtualTableWindow::useCurrentTableAsBaseForNew()
 {
     newTable();
@@ -220,34 +192,6 @@ void VirtualTableWindow::useCurrentTableAsBaseForNew()
     updateWindowTitle();
     ui->tableNameEdit->setFocus();
     updateAfterInit();
-}
-
-void VirtualTableWindow::changeEvent(QEvent* e)
-{
-    QWidget::changeEvent(e);
-    switch (e->type()) {
-        case QEvent::LanguageChange:
-            ui->retranslateUi(this);
-            break;
-        default:
-            break;
-    }
-}
-
-void VirtualTableWindow::showEvent(QShowEvent* e)
-{
-    if (!shownAtLEastOnce)
-    {
-        applyInitialTab();
-        shownAtLEastOnce = true;
-    }
-    QWidget::showEvent(e);
-}
-
-void VirtualTableWindow::newTable()
-{
-    existingTable = false;
-    table = "";
 }
 
 void VirtualTableWindow::parseDdl()
@@ -326,21 +270,6 @@ void VirtualTableWindow::createDataGridActions()
 
 void VirtualTableWindow::createDataFormActions()
 {
-}
-
-void VirtualTableWindow::createDbCombo()
-{
-    ui->dbCombo->setFixedWidth(100);
-    ui->dbCombo->setToolTip(tr("Database"));
-    connect(ui->dbCombo, SIGNAL(verifiedDbChanged()), this, SLOT(dbChanged()));
-}
-
-void VirtualTableWindow::setupCoverWidget()
-{
-    widgetCover = new WidgetCover(this);
-    widgetCover->initWithInterruptContainer();
-    widgetCover->hide();
-    connect(widgetCover, SIGNAL(cancelClicked()), structureExecutor, SLOT(interrupt()));
 }
 
 bool VirtualTableWindow::resolveCreateTableStatement()
@@ -431,23 +360,9 @@ Icon* VirtualTableWindow::getIconNameForMdiWindow()
     return ICONS.VIRTUAL_TABLE;
 }
 
-QString VirtualTableWindow::getTitleForMdiWindow()
+QString VirtualTableWindow::getTitleTemplateForMdiWindow()
 {
-    QString dbSuffix = (!db ? "" : (" (" + db->getName() + ")"));
-    if (existingTable)
-        return table + dbSuffix;
-
-    QStringList existingNames = MAINWINDOW->getMdiArea()->getWindowTitles();
-    if (existingNames.contains(windowTitle()))
-        return windowTitle();
-
-    // Generate new name
-    QString title = tr("New virtual table %1").arg(newTableWindowNum++);
-    while (existingNames.contains(title))
-        title = tr("New virtual table %1").arg(newTableWindowNum++);
-
-    title += dbSuffix;
-    return title;
+    return tr("New virtual table %1");
 }
 
 void VirtualTableWindow::createActions()
@@ -486,16 +401,6 @@ QToolBar* VirtualTableWindow::getToolBar(int toolbar) const
             return ui->structureToolBar;
     }
     return nullptr;
-}
-
-int VirtualTableWindow::getDataTabIdx() const
-{
-    return ui->tabWidget->indexOf(ui->dataTab);
-}
-
-int VirtualTableWindow::getStructureTabIdx() const
-{
-    return ui->tabWidget->indexOf(ui->structureTab);
 }
 
 void VirtualTableWindow::updateAfterInit()
@@ -620,34 +525,9 @@ QString VirtualTableWindow::updateWindowAfterStructureChanged()
     return oldTable;
 }
 
-void VirtualTableWindow::applyInitialTab()
+QList<QTableView*> VirtualTableWindow::getViewsForFontUpdate() const
 {
-    if (existingTable && !table.isNull() && CFG_UI.General.OpenTablesOnData.get())
-        ui->tabWidget->setCurrentIndex(getDataTabIdx());
-    else
-        ui->tabWidget->setCurrentIndex(getStructureTabIdx());
-}
-
-void VirtualTableWindow::updateTabsOrder()
-{
-    tabsMoving = true;
-    ui->tabWidget->removeTab(getDataTabIdx());
-    int idx = 1;
-    if (CFG_UI.General.DataTabAsFirstInTables.get())
-        idx = 0;
-
-    ui->tabWidget->insertTab(idx, ui->dataTab, tr("Data"));
-    tabsMoving = false;
-}
-
-void VirtualTableWindow::executionSuccessful()
-{
-    dataLoaded = true;
-}
-
-void VirtualTableWindow::executionFailed(const QString& errorText)
-{
-    notifyError(tr("Could not load data for table %1. Error details: %2").arg(table, errorText));
+    return {ui->columnsView};
 }
 
 void VirtualTableWindow::nameChanged()
@@ -659,79 +539,10 @@ void VirtualTableWindow::nameChanged()
     updateDdlTab();
 }
 
-void VirtualTableWindow::exportTable()
-{
-    if (!ExportManager::isAnyPluginAvailable())
-    {
-        notifyError(tr("Cannot export, because no export plugin is loaded."));
-        return;
-    }
-
-    ExportDialog dialog(this);
-    dialog.setTableMode(db, table);
-    dialog.exec();
-}
-
-void VirtualTableWindow::importTable()
-{
-    if (!ImportManager::isAnyPluginAvailable())
-    {
-        notifyError(tr("Cannot import, because no import plugin is loaded."));
-        return;
-    }
-
-    ImportDialog dialog(this);
-    dialog.setDbAndTable(db, table);
-    dialog.setPreferTableOverFileName(true);
-    if (dialog.exec() == QDialog::Accepted && dataLoaded)
-        ui->dataView->refreshData(false);
-}
-
-void VirtualTableWindow::populateTable()
-{
-    PopulateDialog dialog(this);
-    dialog.setDbAndTable(db, table);
-    if (dialog.exec() == QDialog::Accepted && dataLoaded)
-        ui->dataView->refreshData(false);
-}
-
 void VirtualTableWindow::createSimilarTable()
 {
     DbObjectDialogs dialog(db);
     dialog.addVirtualTableSimilarTo(QString(), table);
-}
-
-void VirtualTableWindow::tabChanged(int newTab)
-{
-    if (disableCommitOnTabChange || tabsMoving)
-        return;
-
-    if (newTab == getDataTabIdx())
-    {
-        if (isModified())
-        {
-            QMessageBox box(QMessageBox::Question, tr("Uncommitted changes"),
-                            tr("There are uncommitted structure modifications."),
-                            QMessageBox::NoButton, this);
-            box.setInformativeText(tr("You cannot browse or edit data until you have "
-                                      "table structure settled.\n"
-                                      "Do you want to commit the structure, or do you want to go back to the structure tab?"));
-            box.addButton(tr("Go back to structure tab"), QMessageBox::RejectRole);
-            QAbstractButton* commitButton = box.addButton(tr("Commit modifications and browse data"),
-                                                          QMessageBox::ApplyRole);
-            box.exec();
-
-            if (box.clickedButton() == commitButton)
-                commitStructure(true);
-            else
-                focusStructureTab();
-
-            return;
-        }
-
-        if (!dataLoaded)
-            ui->dataView->refreshData(false);
-    }
 }
 
 void VirtualTableWindow::updateStructureCommitState()
@@ -755,82 +566,11 @@ void VirtualTableWindow::updateNewTableState()
     actionMap[REFRESH_STRUCTURE]->setEnabled(existingTable);
 }
 
-void VirtualTableWindow::updateFont()
-{
-    QFont f = CFG_UI.Fonts.DataView.get();
-    QFontMetrics fm(f);
-
-    ui->columnsView->setFont(f);
-    ui->columnsView->horizontalHeader()->setFont(f);
-    ui->columnsView->verticalHeader()->setFont(f);
-    ui->columnsView->verticalHeader()->setDefaultSectionSize(fm.height() + 4);
-}
-
 void VirtualTableWindow::updateDdlTab()
 {
     createTable->rebuildTokens();
     QString ddl = LETOS->getCodeFormatter()->format("sql", createTable->detokenize(), db);
     ui->ddlEdit->setPlainText(ddl);
-}
-
-bool VirtualTableWindow::commitStructure(bool skipWarning)
-{
-    if (!isModified())
-    {
-        qWarning() << "Called VirtualTableWindow::commitStructure(), but isModified() returned false.";
-        updateStructureCommitState();
-        return false;
-    }
-
-    if (!validate(skipWarning))
-        return false;
-
-    executeStructureChanges();
-    return true;
-}
-
-void VirtualTableWindow::changesSuccessfullyCommitted()
-{
-    modifyingThisTable = false;
-
-    QStringList sqls = structureExecutor->getQueries();
-    CFG->addDdlHistory(sqls.join("\n"), db->getName(), db->getPath());
-
-    widgetCover->hide();
-
-    QString oldTable = updateWindowAfterStructureChanged();
-    emit sessionValueChanged();
-
-    NotifyManager* notifyManager = NotifyManager::getInstance();
-    if (oldTable.compare(table, Qt::CaseInsensitive) == 0 || oldTable.isEmpty())
-    {
-        notifyInfo(tr("Committed changes for table '%1' successfully.").arg(table));
-    }
-    else
-    {
-        notifyInfo(tr("Committed changes for table '%1' (named before '%2') successfully.").arg(table, oldTable));
-        notifyManager->renamed(db, database, oldTable, table);
-    }
-    notifyManager->modified(db, database, table);
-
-    DBTREE->refreshSchema(db);
-
-    ui->dataView->resetSorting();
-    if (ui->tabWidget->currentIndex() == getDataTabIdx())
-        ui->dataView->refreshData();
-
-    STATUSFIELD->releaseFadeOutFor(this);
-}
-
-void VirtualTableWindow::changesFailedToCommit(int errorCode, const QString& errorText)
-{
-    qDebug() << "VirtualTableWindow::changesFailedToCommit:" << errorCode << errorText;
-
-    modifyingThisTable = false;
-    widgetCover->hide();
-    notifyError(tr("Could not commit table structure. Error message: %1", "table window").arg(errorText));
-
-    STATUSFIELD->releaseFadeOutFor(this);
 }
 
 void VirtualTableWindow::rollbackStructure()
@@ -857,54 +597,10 @@ void VirtualTableWindow::checkIfTableDeleted(const QString& database, const QStr
             return;
     }
 
-    if (modifyingThisTable)
-        return;
-
-    if (object.compare(table, Qt::CaseInsensitive) == 0)
-    {
-        dbClosedFinalCleanup();
-        MDIAREA->enforceCurrentTaskSelectionAfterWindowClose();
-        getMdiWindow()->close();
-    }
-}
-
-void VirtualTableWindow::nextTab()
-{
-    int idx = ui->tabWidget->currentIndex();
-    idx++;
-    ui->tabWidget->setCurrentIndex(idx);
-}
-
-void VirtualTableWindow::prevTab()
-{
-    int idx = ui->tabWidget->currentIndex();
-    idx--;
-    ui->tabWidget->setCurrentIndex(idx);
-}
-
-void VirtualTableWindow::focusStructureTab()
-{
-    ui->tabWidget->setCurrentIndex(getStructureTabIdx());
-}
-
-void VirtualTableWindow::focusDataTab()
-{
-    ui->tabWidget->setCurrentIndex(getDataTabIdx());
+    AbstractTableWindow::checkIfTableDeleted(database, object, type);
 }
 
 void VirtualTableWindow::refreshStructure()
 {
     parseDdl();
-}
-
-void VirtualTableWindow::dbChanged()
-{
-    if (db)
-        disconnect(db, SIGNAL(dbObjectDeleted(QString,QString,DbObjectType)), this, SLOT(checkIfTableDeleted(QString,QString,DbObjectType)));
-
-    db = ui->dbCombo->currentDb();
-    dataModel->setDb(db);
-
-    if (db)
-        connect(db, SIGNAL(dbObjectDeleted(QString,QString,DbObjectType)), this, SLOT(checkIfTableDeleted(QString,QString,DbObjectType)));
 }

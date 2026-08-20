@@ -428,6 +428,7 @@ VirtualTableWindow* DbObjectDialogs::editVirtualTable(const QString& database, c
     }
 
     win = new VirtualTableWindow(mdiArea, db, database, table);
+    win->init();
     if (win->isInvalid())
     {
         delete win;
@@ -455,6 +456,7 @@ TableWindow* DbObjectDialogs::editRegularTable(const QString& database, const QS
     }
 
     win = new TableWindow(mdiArea, db, database, table);
+    win->init();
     if (win->isInvalid())
     {
         delete win;
@@ -468,6 +470,7 @@ TableWindow* DbObjectDialogs::editRegularTable(const QString& database, const QS
 TableWindow *DbObjectDialogs::addTableSimilarTo(const QString &database, const QString &table)
 {
     TableWindow* win = new TableWindow(mdiArea, db, database, table);
+    win->init();
     mdiArea->addSubWindow(win);
     win->useCurrentTableAsBaseForNew();
     return win;
@@ -476,6 +479,7 @@ TableWindow *DbObjectDialogs::addTableSimilarTo(const QString &database, const Q
 VirtualTableWindow* DbObjectDialogs::addVirtualTableSimilarTo(const QString& database, const QString& table)
 {
     VirtualTableWindow* win = new VirtualTableWindow(mdiArea, db, database, table);
+    win->init();
     mdiArea->addSubWindow(win);
     win->useCurrentTableAsBaseForNew();
     return win;
@@ -484,6 +488,7 @@ VirtualTableWindow* DbObjectDialogs::addVirtualTableSimilarTo(const QString& dat
 TableWindow* DbObjectDialogs::addTable()
 {
     TableWindow* win = new TableWindow(db, mdiArea);
+    win->init();
     mdiArea->addSubWindow(win);
     return win;
 }
@@ -491,6 +496,7 @@ TableWindow* DbObjectDialogs::addTable()
 VirtualTableWindow* DbObjectDialogs::addVirtualTable()
 {
     VirtualTableWindow* win = new VirtualTableWindow(db, mdiArea);
+    win->init();
     mdiArea->addSubWindow(win);
     return win;
 }

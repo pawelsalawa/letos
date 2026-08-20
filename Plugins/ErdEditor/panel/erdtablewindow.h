@@ -16,17 +16,18 @@ class ErdTableWindow : public TableWindow, public ErdPropertiesPanel
         ErdTableWindow(Db* db, ErdEntity* entity, QWidget* parent = nullptr);
         ~ErdTableWindow();
 
-        QString getQuitUncommittedConfirmMessage() const;
-        bool commitErdChange();
-        void abortErdChange();
+        QString getQuitUncommittedConfirmMessage() const override;
+        bool commitErdChange() override;
+        void abortErdChange() override;
         bool editColumn(const QString& columnName);
         ErdEntity* getEntity() const;
+        void init() override;
 
     protected:
-        bool resolveOriginalCreateTableStatement();
-        bool resolveCreateTableStatement();
+        bool resolveOriginalCreateTableStatement() override;
+        bool resolveCreateTableStatement() override;
         void applyInitialTab();
-        void defineCurrentContextDb();
+        void defineCurrentContextDb() override;
 
     private:
         bool handleFailedStructureChanges(bool skipWarning);
@@ -38,14 +39,14 @@ class ErdTableWindow : public TableWindow, public ErdPropertiesPanel
 
     public slots:
         void changesSuccessfullyCommitted();
-        bool commitStructure(bool skipWarning = false);
-        void rollbackStructure();
+        bool commitStructure(bool skipWarning = false) override;
+        void rollbackStructure() override;
         void nameEditedInline(const QString& newName);
         void columnEditedInline(int columnIdx, const QString& newName);
         void columnDeletedInline(int columnIdx);
 
     protected slots:
-        void executeStructureChanges();
+        void executeStructureChanges() override;
         void errorRecorded(const QString& msg);
 
     signals:

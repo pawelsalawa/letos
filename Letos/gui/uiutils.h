@@ -34,6 +34,17 @@ GUI_API_EXPORT void enrichTextEditContextMenu(QPlainTextEdit* editor, std::funct
 GUI_API_EXPORT void addFormatSqlToContextMenu(QPlainTextEdit* editor, std::function<bool(QPlainTextEdit*)> actionCondition = nullptr);
 GUI_API_EXPORT void formatSqlInTextEdit(QPlainTextEdit* editor, Db* db = nullptr);
 
+/**
+ * @brief Interface for classes that require explicit initialization after construction.
+ *
+ * Used by AbstractTableWindow to indicate required call during session restoring. Maybe by other classes in future.
+ */
+class RequiresExplicitInit
+{
+    public:
+        virtual void init() = 0;
+};
+
 // This is a hack. For example we want to display "Ctrl+W" shortcut to the user in this menu, but assigning that shortcut
 // permanently to the action makes it ambigous to Qt, because it's already a standard shortcut,
 // thus making Qt confused and this shortcut working only every second time.

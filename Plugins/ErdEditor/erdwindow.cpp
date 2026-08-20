@@ -1029,6 +1029,7 @@ bool ErdWindow::showSidePanelPropertiesFor(QGraphicsItem* item)
     if (entity)
     {
         ErdTableWindow* tableMdiChild = new ErdTableWindow(memDb, entity);
+        tableMdiChild->init();
         connect(tableMdiChild, &ErdTableWindow::changeCreated, this, &ErdWindow::handleCreatedChange, Qt::QueuedConnection);
         connect(tableMdiChild, &ErdTableWindow::editedEntityShouldBeDeleted, scene, &ErdScene::removeEntityFromScene, Qt::QueuedConnection);
         connect(tableMdiChild, &ErdTableWindow::requestReEditForEntity, this, &ErdWindow::failedChangeReEditRequested, Qt::QueuedConnection);

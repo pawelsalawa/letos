@@ -59,7 +59,7 @@ class FormatStatement
                 NO_SPACE_AFTER = 0x02,
                 NO_NEWLINE_BEFORE = 0x04,
                 NO_NEWLINE_AFTER = 0x08,
-                SINGLE_QUOTE_STRING = 0x10,
+                SINGLE_QUOTE_STRING = 0x10
             };
 
             Q_DECLARE_FLAGS(Flags, Flag)

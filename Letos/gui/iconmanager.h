@@ -318,6 +318,7 @@ class GUI_API_EXPORT IconManager : public QObject
             DEF_ICON(VIEWS,                             "views")
             DEF_ICON(SHADOW_TABLE,                      "shadow_table")
             DEF_ICON(VIRTUAL_TABLE,                     "virtual_table")
+            DEF_ICON(VIRT_TABLE_ADD,                    "virtual_table_add")
             DEF_ICON(WIN_CASCADE,                       "win_cascade")
             DEF_ICON(WIN_TILE,                          "win_tile")
             DEF_ICON(WIN_TILE_HORIZONTAL,               "win_tile_horizontal")

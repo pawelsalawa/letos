@@ -158,37 +158,26 @@ QStringList SchemaResolver::getTableColumns(const QString& table, bool onlyReal)
 
 QStringList SchemaResolver::getTableColumns(const QString &database, const QString &table, bool onlyReal)
 {
-    QStringList columns; // result
-
-    SqliteQueryPtr query = getParsedObject(database, table, TABLE);
-    if (!query)
-        return columns;
-
-    SqliteCreateTablePtr createTable = query.dynamicCast<SqliteCreateTable>();
-    SqliteCreateVirtualTablePtr createVirtualTable = query.dynamicCast<SqliteCreateVirtualTable>();
-    if (!createTable && !createVirtualTable)
+    QStringList columns;
+    SqlQueryPtr results = db->exec(QString("PRAGMA table_xinfo(%1)").arg(wrapObjIfNeeded(table)));
+    if (!results)
     {
-        qDebug() << "Parsed DDL is neither a CREATE TABLE or CREATE VIRTUAL TABLE statement. It's: "
-                 << sqliteQueryTypeToString(query->queryType) << "when trying to parse DDL of" << database << table;
-
+        qWarning() << "Failed to execute PRAGMA table_xinfo for table" << table << "in database" << database;
         return columns;
     }
 
-    // If we parsed virtual table, then we have to create temporary regular table to extract columns.
-    if (createVirtualTable)
+    if (results->isError())
     {
-        createTable = virtualTableAsRegularTable(database, table);
-        if (!createTable)
-            return columns;
+        qWarning() << "Failed to execute PRAGMA table_xinfo for table" << table << "in database" << database << ": " << results->getErrorText();
+        return columns;
     }
 
-    // Now we have a regular table, let's extract columns.
-    for (SqliteCreateTable::Column* column : createTable->columns)
+    for (const SqlResultsRowPtr& row : results->getAll())
     {
-        if (onlyReal && column->hasConstraint(SqliteCreateTable::Column::Constraint::GENERATED))
+        if (row->value("hidden").toBool() && onlyReal)
             continue;
 
-        columns << column->name;
+        columns << row->value("name").toString();
     }
 
     return columns;
@@ -1088,6 +1077,33 @@ QStringList SchemaResolver::getTriggerDdlsForTableOrView(const QString& table)
     return getTriggerDdlsForTableOrView("main", table);
 }
 
+QStringList SchemaResolver::getShadowTablesForVirtualTable(const QString& database, const QString& table)
+{
+    static_qstring(sqlTpl, R"(
+        SELECT sl.name
+          FROM %1.pragma_table_list vl
+               JOIN
+               %1.pragma_table_list sl ON (sl.name REGEXP '^' || vl.name || '_[^_]+$')
+                                      AND sl.type = 'shadow'
+         WHERE vl.name = ? AND
+               vl.type = 'virtual';
+    )");
+
+    SqlQueryPtr results = db->exec(sqlTpl.arg(wrapObjIfNeeded(database)), {table}, dbFlags);
+    if (results->isError())
+    {
+        qCritical() << "Error while getting shadow tables in SchemaResolver:" << results->getErrorCode();
+        return {};
+    }
+
+    return results->getAll() | MAP(row, {return row->value("name").toString();});
+}
+
+QStringList SchemaResolver::getShadowTablesForVirtualTable(const QString& table)
+{
+    return getShadowTablesForVirtualTable("main", table);
+}
+
 QList<SchemaResolver::TableListItem> SchemaResolver::getAllTableListItems()
 {
     return getAllTableListItems("main");
@@ -1561,8 +1577,21 @@ bool SchemaResolver::isWithoutRowIdTable(const QString& database, const QString&
 
 bool SchemaResolver::isVirtualTable(const QString& database, const QString& table)
 {
-    QString ddl = getObjectDdl(database, table, TABLE);
-    return ddl.simplified().toUpper().startsWith("CREATE VIRTUAL TABLE");
+    SqlQueryPtr results = db->exec(QString("PRAGMA %1.table_list(%2);").arg(database, wrapObjIfNeeded(table)));
+    if (results->isError())
+    {
+        qWarning() << "Could not query if table is VIRTUAL using PRAGMA for db.table:" << database << "." << table << "- error was:" << results->getErrorText();
+        return false;
+    }
+
+    if (!results->hasNext())
+    {
+        qWarning() << "Could not query if table is VIRTUAL using PRAGMA for db.table:" << database << "." << table << "- no row was returned.";
+        return false;
+    }
+
+    SqlResultsRowPtr row = results->next();
+    return row->value("type").toString().toLower() == "virtual";
 }
 
 bool SchemaResolver::isVirtualTable(const QString& table)
@@ -1641,22 +1670,25 @@ QString SchemaResolver::getSqliteMasterDdl(bool schema, bool temp)
 
 QStringList SchemaResolver::getCollations()
 {
-    QStringList list;
     SqlQueryPtr results = db->exec("PRAGMA collation_list", dbFlags);
     if (results->isError())
     {
         qWarning() << "Could not read collation list from the database:" << results->getErrorText();
-        return list;
+        return {};
     }
 
-    SqlResultsRowPtr row;
-    while (results->hasNext())
+    return results->getAll() | MAP(row, {return row->value("name").toString();});
+}
+
+QStringList SchemaResolver::getAllExtensions()
+{
+    SqlQueryPtr results = db->exec("PRAGMA module_list", dbFlags);
+    if (results->isError())
     {
-        row = results->next();
-        list << row->value("name").toString();
+        qWarning() << "Could not read module list from the database:" << results->getErrorText();
+        return {};
     }
-
-    return list;
+    return results->getAll() | MAP(row, {return row->value("name").toString();});
 }
 
 bool SchemaResolver::getIgnoreSystemObjects() const

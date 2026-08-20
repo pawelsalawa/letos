@@ -770,7 +770,7 @@ QString TableWindow::getTitleForMdiWindow()
     if (existingTable)
         return table + dbSuffix;
 
-    QStringList existingNames = MainWindow::getInstance()->getMdiArea()->getWindowTitles();
+    QStringList existingNames = MAINWINDOW->getMdiArea()->getWindowTitles();
     if (existingNames.contains(windowTitle()))
         return windowTitle();
 

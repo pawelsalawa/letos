@@ -220,8 +220,7 @@ bool DbTreeView::handleDoubleClick(DbTreeItem *item)
         case DbTreeItem::Type::TABLES:
             break;
         case DbTreeItem::Type::VIRTUAL_TABLE:
-            // TODO if module for virtual table is loaded - show virtual table window
-            break;
+            return handleVirtualTableDoubleClick(item);
         case DbTreeItem::Type::TABLE:
             return handleTableDoubleClick(item);
         case DbTreeItem::Type::INDEXES:
@@ -260,6 +259,12 @@ bool DbTreeView::handleDbDoubleClick(DbTreeItem *item)
 }
 
 bool DbTreeView::handleTableDoubleClick(DbTreeItem *item)
+{
+    dbTree->openTable(item);
+    return true;
+}
+
+bool DbTreeView::handleVirtualTableDoubleClick(DbTreeItem* item)
 {
     dbTree->openTable(item);
     return true;

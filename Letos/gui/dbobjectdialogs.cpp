@@ -12,6 +12,7 @@
 #include "windows/viewwindow.h"
 #include "db/sqlquery.h"
 #include "services/config.h"
+#include "windows/virtualtablewindow.h"
 #include <QMessageBox>
 #include <QDebug>
 #include <tablemodifier.h>
@@ -401,8 +402,43 @@ void DbObjectDialogs::setNoConfirmation(bool value)
     noConfirmation = value;
 }
 
+MdiChild* DbObjectDialogs::editTable(const QString& database, const QString& table)
+{
+    SchemaResolver resolver(db);
+    if (resolver.isVirtualTable(database, table))
+        return editVirtualTable(database, table);
+    else
+        return editRegularTable(database, table);
+}
 
-TableWindow* DbObjectDialogs::editTable(const QString& database, const QString& table)
+VirtualTableWindow* DbObjectDialogs::editVirtualTable(const QString& database, const QString& table)
+{
+    VirtualTableWindow* win = nullptr;
+    for (MdiWindow*& mdiWin : mdiArea->getWindows())
+    {
+        win = dynamic_cast<VirtualTableWindow*>(mdiWin->getMdiChild());
+        if (!win)
+            continue;
+
+        if (win->getDb() == db && win->getTable() == table)
+        {
+            mdiArea->setActiveSubWindow(mdiWin);
+            return win;
+        }
+    }
+
+    win = new VirtualTableWindow(mdiArea, db, database, table);
+    if (win->isInvalid())
+    {
+        delete win;
+        return nullptr;
+    }
+
+    mdiArea->addSubWindow(win);
+    return win;
+}
+
+TableWindow* DbObjectDialogs::editRegularTable(const QString& database, const QString& table)
 {
     TableWindow* win = nullptr;
     for (MdiWindow*& mdiWin : mdiArea->getWindows())
@@ -440,6 +476,13 @@ TableWindow *DbObjectDialogs::addTableSimilarTo(const QString &database, const Q
 TableWindow* DbObjectDialogs::addTable()
 {
     TableWindow* win = new TableWindow(db, mdiArea);
+    mdiArea->addSubWindow(win);
+    return win;
+}
+
+VirtualTableWindow* DbObjectDialogs::addVirtualTable()
+{
+    VirtualTableWindow* win = new VirtualTableWindow(db, mdiArea);
     mdiArea->addSubWindow(win);
     return win;
 }

@@ -160,6 +160,7 @@ void DbTree::createActions()
     createAction(VACUUM_DB, ICONS.VACUUM_DB, tr("Vac&uum"), this, SLOT(vacuumDb()), this);
     createAction(INTEGRITY_CHECK, ICONS.INTEGRITY_CHECK, tr("&Integrity check"), this, SLOT(integrityCheck()), this);
     createAction(ADD_TABLE, ICONS.TABLE_ADD, tr("Create a &table"), this, SLOT(addTable()), this);
+    createAction(ADD_VIRT_TABLE, ICONS.VIRT_TABLE_ADD, tr("Create a &virtual table"), this, SLOT(addVirtualTable()), this);
     createAction(EDIT_TABLE, ICONS.TABLE_EDIT, tr("Edit the t&able"), this, SLOT(editTable()), this);
     createAction(RENAME_TABLE, ICONS.TABLE_RENAME, tr("Rename the table"), this, SLOT(renameItemInline()), this);
     createAction(DEL_TABLE, ICONS.TABLE_DEL, tr("Delete the ta&ble"), this, SLOT(delTable()), this);
@@ -252,7 +253,7 @@ void DbTree::updateActionStates(const QStandardItem *item)
             if (dbTreeItem->getDb()->isOpen())
             {
                 enabled << DISCONNECT_FROM_DB << IMPORT_INTO_DB << EXPORT_DB << REFRESH_SCHEMA
-                        << VACUUM_DB << INTEGRITY_CHECK << ADD_TABLE << ADD_VIEW;
+                        << VACUUM_DB << INTEGRITY_CHECK << ADD_TABLE << ADD_VIRT_TABLE << ADD_VIEW;
                 isDbOpen = true;
             }
             else
@@ -522,6 +523,7 @@ void DbTree::setupActionsForMenu(DbTreeItem* currItem, const QList<DbTreeItem*>&
                     actions += ActionEntry(DELETE_DB);
                     actions += ActionEntry(_separator);
                     actions += ActionEntry(ADD_TABLE);
+                    actions += ActionEntry(ADD_VIRT_TABLE);
                     actions += ActionEntry(ADD_INDEX);
                     actions += ActionEntry(ADD_TRIGGER);
                     actions += ActionEntry(ADD_VIEW);
@@ -549,6 +551,7 @@ void DbTree::setupActionsForMenu(DbTreeItem* currItem, const QList<DbTreeItem*>&
             }
             case DbTreeItem::Type::TABLES:
                 actions += ActionEntry(ADD_TABLE);
+                actions += ActionEntry(ADD_VIRT_TABLE);
                 actions += ActionEntry(_separator);
                 actions += ActionEntry(EXEC_SQL_FROM_FILE);
                 actions += ActionEntry(_separator);
@@ -556,6 +559,7 @@ void DbTree::setupActionsForMenu(DbTreeItem* currItem, const QList<DbTreeItem*>&
                 break;
             case DbTreeItem::Type::TABLE:
                 actions += ActionEntry(ADD_TABLE);
+                actions += ActionEntry(ADD_VIRT_TABLE);
                 actions += ActionEntry(EDIT_TABLE);
                 actions += ActionEntry(RENAME_TABLE);
                 actions += ActionEntry(DEL_TABLE);
@@ -581,11 +585,22 @@ void DbTree::setupActionsForMenu(DbTreeItem* currItem, const QList<DbTreeItem*>&
                 break;
             case DbTreeItem::Type::VIRTUAL_TABLE:
                 actions += ActionEntry(ADD_TABLE);
-                //actions += ActionEntry(EDIT_TABLE); // TODO uncomment when virtual tables have their own edition window
+                actions += ActionEntry(ADD_VIRT_TABLE);
+                actions += ActionEntry(EDIT_TABLE);
                 actions += ActionEntry(RENAME_TABLE);
                 actions += ActionEntry(DEL_TABLE);
                 actions += ActionEntry(_separator);
                 actions += ActionEntry(EXEC_SQL_FROM_FILE);
+                actions += ActionEntry(IMPORT_TABLE);
+                if (exportableItems.size() > 1)
+                    actions += ActionEntry(EXPORT_DB);
+                else
+                    actions += ActionEntry(EXPORT_TABLE);
+
+                actions += ActionEntry(POPULATE_TABLE);
+                actions += ActionEntry(CREATE_SIMILAR_TABLE);
+                actions += ActionEntry(RESET_AUTOINCREMENT);
+                actions += ActionEntry(ERASE_TABLE_DATA);
                 actions += ActionEntry(_separator);
                 actions += dbEntryExt;
                 break;
@@ -593,6 +608,7 @@ void DbTree::setupActionsForMenu(DbTreeItem* currItem, const QList<DbTreeItem*>&
                 actions += ActionEntry(ADD_INDEX);
                 actions += ActionEntry(_separator);
                 actions += ActionEntry(ADD_TABLE);
+                actions += ActionEntry(ADD_VIRT_TABLE);
                 actions += ActionEntry(EDIT_TABLE);
                 actions += ActionEntry(DEL_TABLE);
                 actions += ActionEntry(_separator);
@@ -692,6 +708,7 @@ void DbTree::setupActionsForMenu(DbTreeItem* currItem, const QList<DbTreeItem*>&
                 if (isInTableNode)
                 {
                     actions += ActionEntry(ADD_TABLE);
+                    actions += ActionEntry(ADD_VIRT_TABLE);
                     actions += ActionEntry(EDIT_TABLE);
                     actions += ActionEntry(DEL_TABLE);
                     actions += ActionEntry(_separator);
@@ -730,6 +747,7 @@ void DbTree::setupActionsForMenu(DbTreeItem* currItem, const QList<DbTreeItem*>&
                     actions += ActionEntry(DEL_COLUMN);
                     actions += ActionEntry(_separator);
                     actions += ActionEntry(ADD_TABLE);
+                    actions += ActionEntry(ADD_VIRT_TABLE);
                     actions += ActionEntry(EDIT_TABLE);
                     actions += ActionEntry(DEL_TABLE);
                     actions += ActionEntry(_separator);
@@ -1004,14 +1022,14 @@ Db* DbTree::getSelectedOpenDb()
     return db;
 }
 
-TableWindow* DbTree::openTable(DbTreeItem* item)
+MdiChild* DbTree::openTable(DbTreeItem* item)
 {
-    QString database = QString(); // TODO implement this when named databases (attached) are handled by dbtree.
+    QString database = "main"; // TODO implement this when named databases (attached) are handled by dbtree.
     Db* db = item->getDb();
     return openTable(db, database, item->text());
 }
 
-TableWindow* DbTree::openTable(Db* db, const QString& database, const QString& table)
+MdiChild* DbTree::openTable(Db* db, const QString& database, const QString& table)
 {
     DbObjectDialogs dialogs(db);
     return dialogs.editTable(database, table);
@@ -1020,13 +1038,13 @@ TableWindow* DbTree::openTable(Db* db, const QString& database, const QString& t
 void DbTree::editIndex(DbTreeItem* item)
 {
     Db* db = item->getDb();
-    QString database = QString(); // TODO implement this when named databases (attached) are handled by dbtree.
+    QString database = "main"; // TODO implement this when named databases (attached) are handled by dbtree.
     editIndex(db, database, item->text());
 }
 
 ViewWindow* DbTree::openView(DbTreeItem* item)
 {
-    QString database = QString(); // TODO implement this when named databases (attached) are handled by dbtree.
+    QString database = "main"; // TODO implement this when named databases (attached) are handled by dbtree.
     Db* db = item->getDb();
     return openView(db, database, item->text());
 }
@@ -1059,6 +1077,7 @@ QList<int> DbTree::getActionsForCommandPalette() const
         OPEN_DB,
         OPEN_FILE,
         ADD_TABLE,
+        ADD_VIRT_TABLE,
         ADD_VIEW,
         REFRESH_SCHEMAS,
         EXEC_SQL_FROM_FILE,
@@ -1071,6 +1090,12 @@ TableWindow* DbTree::newTable(Db* db)
 {
     DbObjectDialogs dialogs(db);
     return dialogs.addTable();
+}
+
+VirtualTableWindow* DbTree::newVirtualTable(Db* db)
+{
+    DbObjectDialogs dialogs(db);
+    return dialogs.addVirtualTable();
 }
 
 ViewWindow* DbTree::newView(Db* db)
@@ -1615,6 +1640,22 @@ void DbTree::addTable()
     newTable(db);
 }
 
+void DbTree::addVirtualTable()
+{
+    Db* db = getSelectedOpenDb();
+    if (!db || !db->isValid())
+    {
+        DbTreeItem* item = treeModel->findFirstItemOfType(DbTreeItem::Type::DB);
+        if (item)
+            db = item->getDb();
+    }
+
+    if (!db || !db->isValid())
+        return;
+
+    newVirtualTable(db);
+}
+
 void DbTree::editTable()
 {
     Db* db = getSelectedOpenDb();
@@ -1981,8 +2022,10 @@ void DbTree::addColumn(DbTreeItem* item)
     if (!tableItem)
         return;
 
-    TableWindow* tableWin = openTable(tableItem);
-    tableWin->addColumn();
+    MdiChild* mdiChild = openTable(tableItem);
+    TableWindow* tableWin = dynamic_cast<TableWindow*>(mdiChild);
+    if (tableWin)
+        tableWin->addColumn();
 }
 
 void DbTree::editColumn(DbTreeItem* item)
@@ -1998,8 +2041,10 @@ void DbTree::editColumn(DbTreeItem* item)
     if (!tableItem)
         return;
 
-    TableWindow* tableWin = openTable(tableItem);
-    tableWin->editColumn(item->text());
+    MdiChild* mdiChild = openTable(tableItem);
+    TableWindow* tableWin = dynamic_cast<TableWindow*>(mdiChild);
+    if (tableWin)
+        tableWin->editColumn(item->text());
 }
 
 void DbTree::delColumn(DbTreeItem* item)
@@ -2015,8 +2060,10 @@ void DbTree::delColumn(DbTreeItem* item)
     if (!tableItem)
         return;
 
-    TableWindow* tableWin = openTable(tableItem);
-    tableWin->delColumn(item->text());
+    MdiChild* mdiChild = openTable(tableItem);
+    TableWindow* tableWin = dynamic_cast<TableWindow*>(mdiChild);
+    if (tableWin)
+        tableWin->delColumn(item->text());
 }
 
 void DbTree::currentChanged(const QModelIndex &current, const QModelIndex &previous)

@@ -52,6 +52,7 @@ class GUI_API_EXPORT DbTreeView : public QTreeView
         bool handleDoubleClick(DbTreeItem* item);
         bool handleDbDoubleClick(DbTreeItem* item);
         bool handleTableDoubleClick(DbTreeItem* item);
+        bool handleVirtualTableDoubleClick(DbTreeItem* item);
         bool handleIndexDoubleClick(DbTreeItem* item);
         bool handleTriggerDoubleClick(DbTreeItem* item);
         bool handleViewDoubleClick(DbTreeItem* item);

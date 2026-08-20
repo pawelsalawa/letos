@@ -345,7 +345,7 @@ void DbTreeModel::expanded(const QModelIndex &index)
     }
 
     DbTreeItem* dbTreeItem = dynamic_cast<DbTreeItem*>(item);
-    if (dbTreeItem->getType() == DbTreeItem::Type::TABLE)
+    if (dbTreeItem->getType() == DbTreeItem::Type::TABLE || dbTreeItem->getType() == DbTreeItem::Type::VIRTUAL_TABLE)
         loadTableSchema(dbTreeItem);
 
     if (dbTreeItem->getType() == DbTreeItem::Type::VIEW)
@@ -587,6 +587,7 @@ void DbTreeModel::refreshSchema(Db* db, QStandardItem *item)
 
     // Collect all db objects and build the db branch
     bool sort = CFG_UI.DbList.SortObjects.get();
+    bool showShadow = CFG_UI.DbList.ShowShadowTables.get();
     QList<SchemaResolver::TableListItem> tableListItems = resolver.getAllTableListItems();
     QStringList tables;
     QStringList views;
@@ -602,9 +603,14 @@ void DbTreeModel::refreshSchema(Db* db, QStandardItem *item)
                 tables << tableListItem.name;
                 break;
             case SchemaResolver::TableListItem::SHADOW_TABLE:
-                shadowTables << tableListItem.name;
-                tables << tableListItem.name;
+            {
+                if (showShadow)
+                {
+                    shadowTables << tableListItem.name;
+                    tables << tableListItem.name;
+                }
                 break;
+            }
             case SchemaResolver::TableListItem::TABLE:
                 tables << tableListItem.name;
                 break;

@@ -18,6 +18,7 @@ class DbTreeModel;
 class QStandardItem;
 class QTimer;
 class TableWindow;
+class VirtualTableWindow;
 class ViewWindow;
 class UserInputFilter;
 class DbTreeView;
@@ -75,6 +76,7 @@ class GUI_API_EXPORT DbTree : public QDockWidget, public ExtActionContainer
             VACUUM_DB,
             INTEGRITY_CHECK,
             ADD_TABLE,
+            ADD_VIRT_TABLE,
             EDIT_TABLE,
             RENAME_TABLE,
             DEL_TABLE,
@@ -145,7 +147,7 @@ class GUI_API_EXPORT DbTree : public QDockWidget, public ExtActionContainer
         QSet<Db*> getSelectedDatabases();
         QList<DbTreeItem*> getSelectedItems(DbTreeItem::Type itemType);
         QList<DbTreeItem*> getSelectedItems(ItemFilterFunc filterFunc = nullptr);
-        TableWindow* openTable(Db* db, const QString& database, const QString& table);
+        MdiChild* openTable(Db* db, const QString& database, const QString& table);
         ViewWindow* openView(Db* db, const QString& database, const QString& view);
         void editIndex(Db* db, const QString& database, const QString& index);
         void editTrigger(Db* db, const QString& database, const QString& trigger);
@@ -161,8 +163,9 @@ class GUI_API_EXPORT DbTree : public QDockWidget, public ExtActionContainer
     private:
         void initSmallToolbarActions();
         void setActionEnabled(int action, bool enabled);
-        TableWindow* openTable(DbTreeItem* item);
+        MdiChild* openTable(DbTreeItem* item);
         TableWindow* newTable(Db* db);
+        VirtualTableWindow* newVirtualTable(Db* db);
         ViewWindow* openView(DbTreeItem* item);
         ViewWindow* newView(Db* db);
         void editIndex(DbTreeItem* item);
@@ -228,6 +231,7 @@ class GUI_API_EXPORT DbTree : public QDockWidget, public ExtActionContainer
         void import();
         void exportDb();
         void addTable();
+        void addVirtualTable();
         void editTable();
         void delTable();
         void addIndex();

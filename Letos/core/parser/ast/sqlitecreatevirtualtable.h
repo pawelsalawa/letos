@@ -16,7 +16,7 @@ class API_EXPORT SqliteCreateVirtualTable : public SqliteQuery
         SqliteCreateVirtualTable(bool ifNotExists, const QString& name1, const QString& name2,
                                  const QString& name3);
         SqliteCreateVirtualTable(bool ifNotExists, const QString& name1, const QString& name2,
-                                 const QString& name3, const QList<QString>& args);
+                                 const QString& name3, const QStringList& args);
 
         SqliteStatement* clone();
 
@@ -36,7 +36,7 @@ class API_EXPORT SqliteCreateVirtualTable : public SqliteQuery
         QString database = QString();
         QString table = QString();
         QString module = QString();
-        QList<QString> args;
+        QStringList args;
 };
 
 typedef QSharedPointer<SqliteCreateVirtualTable> SqliteCreateVirtualTablePtr;

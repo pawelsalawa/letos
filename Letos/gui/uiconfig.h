@@ -125,6 +125,7 @@ CFG_UI_CATEGORIES(Ui,
         CFG_ENTRY(bool,                    SortObjects,                 true)
         CFG_ENTRY(bool,                    SortColumns,                 false)
         CFG_ENTRY(bool,                    ShowSystemObjects,           false)
+        CFG_ENTRY(bool,                    ShowShadowTables,            false)
         CFG_ENTRY(bool,                    ShowDbTreeLabels,            true) // any labels at all
         CFG_ENTRY(bool,                    ShowRegularTableLabels,      false)
         CFG_ENTRY(bool,                    ShowVirtualTableLabels,      true)

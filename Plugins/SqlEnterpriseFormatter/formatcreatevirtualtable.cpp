@@ -43,10 +43,9 @@ void FormatCreateVirtualTable::handleToken(const TokenPtr& token)
     switch (token->type)
     {
         case Token::OTHER:
-            withId(token->value);
-            break;
         case Token::STRING:
-            withString(token->value);
+        case Token::KEYWORD:
+            withId(token->value, false);
             break;
         case Token::COMMENT:
             // TODO Format comment here
@@ -71,9 +70,6 @@ void FormatCreateVirtualTable::handleToken(const TokenPtr& token)
             break;
         case Token::BLOB:
             withBlob(token->value);
-            break;
-        case Token::KEYWORD:
-            withKeyword(token->value);
             break;
         case Token::SPACE:
         case Token::INVALID:

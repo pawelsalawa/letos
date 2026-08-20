@@ -219,7 +219,7 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>8</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="databaseListPage">
           <layout class="QVBoxLayout" name="verticalLayout_36">
@@ -229,17 +229,20 @@
               <string>Database list</string>
              </property>
              <layout class="QGridLayout" name="gridLayout">
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="expandTablesCheck">
+              <item row="6" column="0">
+               <widget class="QCheckBox" name="dispSystemTablesCheck">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;By default, system tables and indexes are hidden from the list.&lt;br/&gt;Enable this option to display internal SQLite objects, such as &lt;span style=&quot; font-family:'Courier New';&quot;&gt;sqlite_schema&lt;/span&gt; and auto-generated indexes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
-                 <string>Expand tables when connected to a database</string>
+                 <string>Display system tables and indexes on the list</string>
                 </property>
                 <property name="cfg" stdset="0">
-                 <string notr="true">DbList.ExpandTables</string>
+                 <string notr="true">DbList.ShowSystemObjects</string>
                 </property>
                </widget>
               </item>
-              <item row="7" column="0">
+              <item row="8" column="0">
                <widget class="QCheckBox" name="prefMasterOverSchemaCheck">
                 <property name="toolTip">
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;By default, the database schema is accessed using the &lt;span style=&quot; font-family:'Courier New';&quot;&gt;sqlite_schema&lt;/span&gt; table name.&lt;br/&gt;Older SQLite versions used the &lt;span style=&quot; font-family:'Courier New';&quot;&gt;sqlite_master&lt;/span&gt; name, which is still supported as an alias.&lt;br/&gt;You can switch here to use the legacy name instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -252,16 +255,13 @@
                 </property>
                </widget>
               </item>
-              <item row="5" column="0">
-               <widget class="QCheckBox" name="sortColumns">
-                <property name="toolTip">
-                 <string>If switched off, then columns will be sorted in the order they are typed in CREATE TABLE statement.</string>
-                </property>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="expandTablesCheck">
                 <property name="text">
-                 <string>Sort table columns alphabetically</string>
+                 <string>Expand tables when connected to a database</string>
                 </property>
                 <property name="cfg" stdset="0">
-                 <string notr="true">DbList.SortColumns</string>
+                 <string notr="true">DbList.ExpandTables</string>
                 </property>
                </widget>
               </item>
@@ -278,6 +278,29 @@
                 </property>
                </widget>
               </item>
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="expandViewsCheck">
+                <property name="text">
+                 <string>Expand views when connected to a database</string>
+                </property>
+                <property name="cfg" stdset="0">
+                 <string notr="true">DbList.ExpandViews</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QCheckBox" name="sortColumns">
+                <property name="toolTip">
+                 <string>If switched off, then columns will be sorted in the order they are typed in CREATE TABLE statement.</string>
+                </property>
+                <property name="text">
+                 <string>Sort table columns alphabetically</string>
+                </property>
+                <property name="cfg" stdset="0">
+                 <string notr="true">DbList.SortColumns</string>
+                </property>
+               </widget>
+              </item>
               <item row="4" column="0">
                <widget class="QCheckBox" name="sortObjects">
                 <property name="toolTip">
@@ -291,7 +314,7 @@
                 </property>
                </widget>
               </item>
-              <item row="8" column="0">
+              <item row="9" column="0">
                <widget class="QGroupBox" name="addLabelsGroup">
                 <property name="toolTip">
                  <string>&lt;p&gt;Additional labels are those displayed next to the names on the databases list (they are blue, unless configured otherwise). Enabling this option will result in labels for databases, invalid databases and aggregated nodes (column group, index group, trigger group). For more labels see options below.&lt;p&gt;</string>
@@ -351,26 +374,16 @@
                 </layout>
                </widget>
               </item>
-              <item row="6" column="0">
-               <widget class="QCheckBox" name="dispSystemTablesCheck">
+              <item row="7" column="0">
+               <widget class="QCheckBox" name="showShadowTablesCheck">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;By default, system tables and indexes are hidden from the list.&lt;br/&gt;Enable this option to display internal SQLite objects, such as &lt;span style=&quot; font-family:'Courier New';&quot;&gt;sqlite_schema&lt;/span&gt; and auto-generated indexes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show shadow tables used internally by virtual tables in the database list. When hidden, they remain accessible through their associated virtual tables.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
-                 <string>Display system tables and indexes on the list</string>
+                 <string>Show shadow tables on the list</string>
                 </property>
                 <property name="cfg" stdset="0">
-                 <string notr="true">DbList.ShowSystemObjects</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QCheckBox" name="expandViewsCheck">
-                <property name="text">
-                 <string>Expand views when connected to a database</string>
-                </property>
-                <property name="cfg" stdset="0">
-                 <string notr="true">DbList.ExpandViews</string>
+                 <string notr="true">DbList.ShowShadowTables</string>
                 </property>
                </widget>
               </item>
@@ -439,7 +452,7 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>679</width>
+                <width>440</width>
                 <height>871</height>
                </rect>
               </property>
@@ -2537,7 +2550,7 @@
               <property name="geometry">
                <rect>
                 <x>0</x>
-                <y>-178</y>
+                <y>0</y>
                 <width>697</width>
                 <height>716</height>
                </rect>
@@ -3266,8 +3279,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>695</width>
-                <height>522</height>
+                <width>235</width>
+                <height>493</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">

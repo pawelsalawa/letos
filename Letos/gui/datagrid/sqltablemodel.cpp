@@ -22,11 +22,14 @@ void SqlTableModel::setDatabaseAndTable(const QString& database, const QString& 
 {
     this->database = database;
     this->table = table;
-    setQuery("SELECT * FROM "+getDataSource());
-    updateTablesInUse(table);
 
     SchemaResolver resolver(db);
     isWithOutRowIdTable = resolver.isWithoutRowIdTable(database, table);
+
+    QStringList cols = resolver.getTableColumns(database, table, false) | MAP(c, {return wrapObjIfNeeded(c);});
+    setQuery(QString("SELECT %1 FROM %2").arg(cols.join(", "), getDataSource()));
+
+    updateTablesInUse(table);
 }
 
 SqlQueryModel::Features SqlTableModel::features() const

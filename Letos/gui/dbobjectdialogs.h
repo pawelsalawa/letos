@@ -10,7 +10,9 @@ class ChainExecutor;
 class QWidget;
 class MainWindow;
 class MdiArea;
+class MdiChild;
 class TableWindow;
+class VirtualTableWindow;
 class ViewWindow;
 
 class GUI_API_EXPORT DbObjectDialogs : public QObject
@@ -31,7 +33,8 @@ class GUI_API_EXPORT DbObjectDialogs : public QObject
         DbObjectDialogs(Db* db, QWidget* parentWidget);
 
         TableWindow* addTable();
-        TableWindow* editTable(const QString& database, const QString& table);
+        VirtualTableWindow* addVirtualTable();
+        MdiChild* editTable(const QString& database, const QString& table);
         TableWindow* addTableSimilarTo(const QString& database, const QString& table);
 
         void addIndex(const QString& table);
@@ -63,6 +66,8 @@ class GUI_API_EXPORT DbObjectDialogs : public QObject
         QHash<QString, QHash<QString, QStringList> > groupObjects(const QHash<QString, QStringList>& objects);
         QStringList buildDropSql(const QString& type, const QString& database, const QString& name);
         ChainExecutor* executeSql(Db* db, const QStringList& sqls);
+        VirtualTableWindow* editVirtualTable(const QString& database, const QString& table);
+        TableWindow* editRegularTable(const QString& database, const QString& table);
 
         Db* db = nullptr;
         QWidget* parentWidget = nullptr;

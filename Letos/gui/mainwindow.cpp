@@ -379,6 +379,7 @@ void MainWindow::createActions()
     attachActionInMenu(dbTree->getAction(DbTree::OPEN_FILE), dbTree->getAction(DbTree::ADD_DB), ui->dbToolbar);
 
     ui->structureToolbar->addAction(dbTree->getAction(DbTree::ADD_TABLE));
+    attachActionInMenu(dbTree->getAction(DbTree::ADD_TABLE), dbTree->getAction(DbTree::ADD_VIRT_TABLE), ui->structureToolbar);
     ui->structureToolbar->addAction(dbTree->getAction(DbTree::ADD_VIEW));
 
     ui->taskBar->initContextMenu(this);
@@ -423,6 +424,7 @@ void MainWindow::initMenuBar()
     menuBar()->addMenu(structMenu);
 
     structMenu->addAction(dbTree->getAction(DbTree::ADD_TABLE));
+    structMenu->addAction(dbTree->getAction(DbTree::ADD_VIRT_TABLE));
     structMenu->addAction(dbTree->getAction(DbTree::EDIT_TABLE));
     structMenu->addAction(dbTree->getAction(DbTree::DEL_TABLE));
     structMenu->addSeparator();

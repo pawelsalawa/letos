@@ -22,7 +22,7 @@ SqliteCreateVirtualTable::SqliteCreateVirtualTable(bool ifNotExists, const QStri
     module = name3;
 }
 
-SqliteCreateVirtualTable::SqliteCreateVirtualTable(bool ifNotExists, const QString &name1, const QString &name2, const QString &name3, const QList<QString> &args) :
+SqliteCreateVirtualTable::SqliteCreateVirtualTable(bool ifNotExists, const QString &name1, const QString &name2, const QString &name3, const QStringList& args) :
     SqliteCreateVirtualTable()
 {
     initName(name1, name2);
@@ -92,17 +92,19 @@ TokenList SqliteCreateVirtualTable::rebuildTokensFromContents(bool replaceStatem
 {
     StatementTokenBuilder builder(replaceStatementTokens);
     builder.withTokens(SqliteQuery::rebuildTokensFromContents(replaceStatementTokens));
-    builder.withKeyword("CREATE").withSpace().withKeyword("VIRTUAL").withSpace().withKeyword("TABLE");
+    builder.withKeyword("CREATE").withSpace().withKeyword("VIRTUAL").withSpace().withKeyword("TABLE").withSpace();
     if (ifNotExistsKw)
         builder.withKeyword("IF").withSpace().withKeyword("NOT").withSpace().withKeyword("EXISTS").withSpace();
 
     if (!database.isNull())
         builder.withOther(database).withOperator(".");
 
+    builder.withOther(table).withSpace();
+
     builder.withKeyword("USING").withSpace().withOther(module);
     if (!args.isEmpty())
     {
-        builder.withSpace();
+        builder.withSpace().withParLeft();
         int i = 0;
         for (const QString& arg : args)
         {
@@ -112,6 +114,7 @@ TokenList SqliteCreateVirtualTable::rebuildTokensFromContents(bool replaceStatem
             builder.withTokens(Lexer::tokenize(arg));
             i++;
         }
+        builder.withParRight();
     }
 
     builder.withOperator(";");

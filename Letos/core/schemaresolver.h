@@ -116,6 +116,8 @@ class API_EXPORT SchemaResolver
         QStringList getIndexDdlsForTable(const QString& table);
         QStringList getTriggerDdlsForTableOrView(const QString& database, const QString& table);
         QStringList getTriggerDdlsForTableOrView(const QString& table);
+        QStringList getShadowTablesForVirtualTable(const QString& database, const QString& table);
+        QStringList getShadowTablesForVirtualTable(const QString& table);
 
         QList<TableListItem> getAllTableListItems();
         QList<TableListItem> getAllTableListItems(const QString& database);
@@ -240,6 +242,7 @@ class API_EXPORT SchemaResolver
         static ObjectType objectTypeFromQueryType(const SqliteQueryType& queryType);
 
         QStringList getCollations();
+        QStringList getAllExtensions();
 
         bool getIgnoreSystemObjects() const;
         void setIgnoreSystemObjects(bool value);

@@ -191,6 +191,7 @@ set(PROJECT_HEADERS
     commandpalette/cpglobalactionsprovider.h
     common/htmlbutton.h
     common/iconpositionitemdelegate.h
+    windows/virtualtablewindow.h
 )
 
 set(PROJECT_SOURCES
@@ -376,6 +377,7 @@ set(PROJECT_SOURCES
     commandpalette/cpglobalactionsprovider.cpp
     common/htmlbutton.cpp
     common/iconpositionitemdelegate.cpp
+    windows/virtualtablewindow.cpp
 )
 
 qt_add_resources(PROJECT_SOURCES
@@ -456,6 +458,7 @@ qt_wrap_ui(PROJECT_SOURCES
     codesnippetspanel.ui
     dialogs/manualcommitwalmodedialog.ui
     dialogs/manualcommitpendingtxdialog.ui
+    windows/virtualtablewindow.ui
 )
 
 add_library(guiLetos SHARED ${PROJECT_HEADERS} ${PROJECT_SOURCES})

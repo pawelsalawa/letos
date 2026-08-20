@@ -6,6 +6,7 @@
 #include "sqleditor.h"
 #include "windows/editorwindow.h"
 #include "windows/tablewindow.h"
+#include "windows/virtualtablewindow.h"
 #include "windows/viewwindow.h"
 #include "dataview.h"
 #include "dbtree/dbtree.h"
@@ -16,7 +17,6 @@
 #include "uidebug.h"
 #include "completionhelper.h"
 #include "services/updatemanager.h"
-#include "gui_global.h"
 #include "log.h"
 #include "qio.h"
 #include "translations.h"
@@ -176,6 +176,7 @@ int main(int argc, char *argv[])
     DataView::staticInit();
     EditorWindow::staticInit();
     TableWindow::staticInit();
+    VirtualTableWindow::staticInit();
     ViewWindow::staticInit();
     MultiEditorDateTime::staticInit();
     MultiEditorTime::staticInit();

@@ -295,5 +295,6 @@
         <file>img/minify.svg</file>
         <file>img/shadow_table.svg</file>
         <file>img/hidden_column.svg</file>
+        <file>img/virtual_table_add.svg</file>
     </qresource>
 </RCC>

@@ -3,6 +3,7 @@
 ### 4.1.0
 - ADDED: #3949 Support for `HIDDEN` columns. Now they have their own icon, are marked with icon on Structure tab and the `HIDDEN` attribute can be toggled on/off in the Column Dialog.
 - ADDED: #3060 Virtual Tables can be now open just like any other table. Their dedicated MDI window allows to review and define all necessary parameters for the `CREATE VIRTUAL TABLE` statement. Appropriate icons and actions are now available in menus, toolbars, etc.
+- ADDED: #3053 Additional fonts can be added to Letos by defining font directory with LETOS_FONTS environment variable, or by using any of other predefined Letos fonts location (see wiki for details).
 
 ### 4.0.3
 - ADDED: #5794 Added glowing effect for entities & arrows being in relation with the selected entity. Can be turned off/on.

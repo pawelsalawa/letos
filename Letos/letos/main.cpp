@@ -171,6 +171,7 @@ int main(int argc, char *argv[])
 
     LETOS->setInitialTranslationFiles({"qtbase", "core", "gui", "letos"});
     LETOS->init(a.arguments(), true);
+    scanForCustomFonts();
     IconManager::getInstance()->init();
     DbTree::staticInit();
     DataView::staticInit();

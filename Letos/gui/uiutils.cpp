@@ -296,3 +296,36 @@ void addFormatSqlToContextMenu(QPlainTextEdit* editor, std::function<bool(QPlain
     });
 }
 
+void scanForCustomFonts()
+{
+    QStringList fontDirs;
+    if (getDistributionType() != DistributionType::OS_MANAGED)
+        fontDirs += qApp->applicationDirPath() + "/fonts";
+
+    fontDirs += QDir(CFG->getConfigDir()).absoluteFilePath("fonts");
+
+    for (const QString& varName : {"LETOS_FONTS"})
+    {
+        QString envDirs = LETOS->getEnv(varName);
+        if (!envDirs.isNull())
+            fontDirs += envDirs.split(PATH_LIST_SEPARATOR);
+    }
+
+    for (const QString& fontDirPath : fontDirs)
+    {
+        QDir fontDir(fontDirPath);
+        if (!fontDir.exists())
+            continue;
+
+        for (QFileInfo& fileInfo : fontDir.entryInfoList({"*.ttf", "*.otf"}, QDir::Files))
+        {
+            QString fileName = fileInfo.absoluteFilePath();
+            int id = QFontDatabase::addApplicationFont(fileName);
+            if (id == -1)
+                qWarning() << "Failed to load custom font" << fileName;
+            else
+                qDebug() << "Loaded custom font" << fileName;
+        }
+    }
+}
+

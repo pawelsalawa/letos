@@ -33,6 +33,7 @@ GUI_API_EXPORT QColor findContrastingColor(const QColor& input);
 GUI_API_EXPORT void enrichTextEditContextMenu(QPlainTextEdit* editor, std::function<void(QPlainTextEdit*,QMenu*)> enrichFunc);
 GUI_API_EXPORT void addFormatSqlToContextMenu(QPlainTextEdit* editor, std::function<bool(QPlainTextEdit*)> actionCondition = nullptr);
 GUI_API_EXPORT void formatSqlInTextEdit(QPlainTextEdit* editor, Db* db = nullptr);
+GUI_API_EXPORT void scanForCustomFonts();
 
 /**
  * @brief Interface for classes that require explicit initialization after construction.

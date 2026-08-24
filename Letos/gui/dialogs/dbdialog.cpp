@@ -596,12 +596,19 @@ bool DbDialog::validate()
         setValidState(ui->fileEdit, false, tr("Enter a database file path."));
         fileState = false;
     }
-    else if (QFileInfo(getPath()).isRelative())
+    else
     {
-        setValidStateWarning(ui->fileEdit,
-            tr("You're using a relative file path, which will be resolved to \"%1\" according to the application's working directory. It's always better to use absolute file path to avoid unexpected database location.")
-                             .arg(QFileInfo(getPath()).absoluteFilePath()));
-        fileState = false;
+        QUrl url = QUrl(ui->fileEdit->text());
+        if (!url.scheme().isEmpty() && !url.isLocalFile())
+        {
+            // Plugin-driven URL. Nothing to validate more about it here.
+        }
+        else if (QFileInfo(getPath()).isRelative())
+        {
+            setValidStateWarning(ui->fileEdit,
+                tr("You're using a relative file path, which will be resolved to \"%1\" according to the application's working directory. It's always better to use absolute file path to avoid unexpected database location.")
+                                 .arg(QFileInfo(getPath()).absoluteFilePath()));
+        }
     }
 
     if (fileState)

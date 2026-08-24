@@ -353,7 +353,7 @@ void DbAndroidPathDialog::updateDeviceList()
 
 void DbAndroidPathDialog::updateValidations()
 {
-    bool isUpdating = dbListCover->isVisible();
+    // bool isUpdating = dbListCover->isVisible();
     bool ipOk = true;
     bool deviceOk = true;
     if (ui->ipRadio->isChecked())
@@ -370,7 +370,7 @@ void DbAndroidPathDialog::updateValidations()
     bool dbOk = !ui->databaseCombo->currentText().isEmpty();
     setValidState(ui->databaseCombo, dbOk, tr("Pick Android database."));
 
-    ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(ipOk && deviceOk && dbOk && !isUpdating);
+    ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(ipOk && deviceOk && dbOk && !updatingDbList);
 }
 
 void DbAndroidPathDialog::handleUpdateDbList(const QStringList& dbList)

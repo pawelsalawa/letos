@@ -2,6 +2,8 @@
 #include <QList>
 #include <QStringList>
 #include <QtTest>
+#include <QBuffer>
+#include <QStringEncoder>
 #include "tsvserializer.h"
 #include "csvserializer.h"
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
@@ -38,6 +40,10 @@ private:
         void testCsv3Unix();
         void testCsv3Win();
         void testCsv3Mac();
+        void testCsvUnicodeEntries_data();
+        void testCsvUnicodeEntries();
+        void testCsvLongSeparatorEntries();
+        void testCsvQuotedUnicodeEntries();
         void testCsvPerformance();
 };
 
@@ -205,6 +211,76 @@ void DsvFormatsTestTest::testCsv3Mac()
     QCOMPARE(result[1].size(), 2);
     QCOMPARE(result[1][0], "v3");
     QCOMPARE(result[1][1], "v4");
+}
+
+void DsvFormatsTestTest::testCsvUnicodeEntries_data()
+{
+    QTest::addColumn<QString>("lineEnding");
+    QTest::addColumn<int>("encoding");
+    for (auto encoding : {QStringConverter::Utf8, QStringConverter::Utf16LE, QStringConverter::Utf16BE})
+    {
+        for (const QString& lineEnding : {QString("\n"), QString("\r"), QString("\r\n")})
+        {
+            QByteArray name = QByteArray::number(encoding) + "-" + lineEnding.toUtf8().toHex();
+            QTest::newRow(name.constData()) << lineEnding << int(encoding);
+        }
+    }
+}
+
+void DsvFormatsTestTest::testCsvUnicodeEntries()
+{
+    QFETCH(QString, lineEnding);
+    QFETCH(int, encoding);
+    QList<QStringList> expected = {{"heading", "value"}, {QStringLiteral("\u00e9clair"), "one"}, {QStringLiteral("\u03ba\u03cc\u03c3\u03bc\u03bf\u03c2"), "two"},
+                                   {QStringLiteral("\u4e2d\u6587"), "three"}, {QStringLiteral("\U0001f680rocket"), "four"}};
+    QStringList lines;
+    for (const QStringList& row : expected)
+        lines << row.join(',');
+
+    QByteArray bytes = QStringEncoder(QStringConverter::Encoding(encoding))(lines.join(lineEnding) + lineEnding);
+    QBuffer buffer(&bytes);
+    QVERIFY(buffer.open(QIODevice::ReadOnly));
+    QTextStream stream(&buffer);
+    stream.setEncoding(QStringConverter::Encoding(encoding));
+    for (const QStringList& row : expected)
+        QCOMPARE(CsvSerializer::deserializeOneEntry(stream, CsvFormat::DEFAULT), row);
+
+    QVERIFY(stream.atEnd());
+    QVERIFY(stream.seek(0));
+    QCOMPARE(CsvSerializer::deserialize(stream, CsvFormat::DEFAULT), expected);
+}
+
+void DsvFormatsTestTest::testCsvLongSeparatorEntries()
+{
+    QString text = QStringLiteral("heading|||value\n\u00e9clair|||one|\n\U0001f680rocket|||three\n\u03ba\u03cc\u03c3\u03bc\u03bf\u03c2|||two\n");
+    QByteArray bytes = text.toUtf8();
+    QBuffer buffer(&bytes);
+    QVERIFY(buffer.open(QIODevice::ReadOnly));
+    QTextStream stream(&buffer);
+    stream.setEncoding(QStringConverter::Utf8);
+    CsvFormat format(QStringList{"|||"}, QStringList{"\r\n", "\n", "\r"});
+    format.strictColumnSeparator = true;
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stream, format), (QStringList{"heading", "value"}));
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stream, format), (QStringList{QStringLiteral("\u00e9clair"), "one|"}));
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stream, format), (QStringList{QStringLiteral("\U0001f680rocket"), "three"}));
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stream, format), (QStringList{QStringLiteral("\u03ba\u03cc\u03c3\u03bc\u03bf\u03c2"), "two"}));
+    QTextStream stringStream(&text);
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stringStream, format), (QStringList{"heading", "value"}));
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stringStream, format), (QStringList{QStringLiteral("\u00e9clair"), "one|"}));
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stringStream, format), (QStringList{QStringLiteral("\U0001f680rocket"), "three"}));
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stringStream, format), (QStringList{QStringLiteral("\u03ba\u03cc\u03c3\u03bc\u03bf\u03c2"), "two"}));
+}
+
+void DsvFormatsTestTest::testCsvQuotedUnicodeEntries()
+{
+    QByteArray bytes = QStringLiteral("heading,value\n\"\u00e9clair,\"\"\u03ba\u03cc\u03c3\u03bc\u03bf\u03c2\"\"\n\u4e2d\u6587\",one\n\U0001f680rocket,two\n").toUtf8();
+    QBuffer buffer(&bytes);
+    QVERIFY(buffer.open(QIODevice::ReadOnly));
+    QTextStream stream(&buffer);
+    stream.setEncoding(QStringConverter::Utf8);
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stream, CsvFormat::DEFAULT), (QStringList{"heading", "value"}));
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stream, CsvFormat::DEFAULT), (QStringList{QStringLiteral("\u00e9clair,\"\u03ba\u03cc\u03c3\u03bc\u03bf\u03c2\"\n\u4e2d\u6587"), "one"}));
+    QCOMPARE(CsvSerializer::deserializeOneEntry(stream, CsvFormat::DEFAULT), (QStringList{QStringLiteral("\U0001f680rocket"), "two"}));
 }
 
 void DsvFormatsTestTest::testCsvPerformance()

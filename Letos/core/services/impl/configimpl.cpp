@@ -309,9 +309,10 @@ qint64 ConfigImpl::addSqlHistory(const QString& sql, const QString& dbName, int 
             sqlHistoryId = 0;
     }
 
+    qint64 id = sqlHistoryId++;
     sqlHistoryMutex.lock();
-    runInThread([=, this]{ asyncAddSqlHistory(sqlHistoryId, sql, dbName, timeSpentMillis, rowsAffected); });
-    return sqlHistoryId++;
+    runInThread([=, this]{ asyncAddSqlHistory(id, sql, dbName, timeSpentMillis, rowsAffected); });
+    return id;
 }
 
 void ConfigImpl::updateSqlHistory(qint64 id, const QString& sql, const QString& dbName, int timeSpentMillis, int rowsAffected)

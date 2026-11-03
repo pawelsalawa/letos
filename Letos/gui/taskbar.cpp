@@ -1,6 +1,7 @@
 #include "taskbar.h"
 #include "mainwindow.h"
 #include "uiutils.h"
+#include "uiconfig.h"
 #include <QMouseEvent>
 #include <QMimeData>
 #include <QDataStream>
@@ -12,6 +13,238 @@
 #include <QRubberBand>
 #include <QApplication>
 #include <QMenu>
+#include <QResizeEvent>
+#include <climits>
+
+/**
+ * @brief Container for task buttons used when the TaskBar is in the wrapping mode.
+ *
+ * QToolBar cannot wrap its items into multiple lines, so in the wrapping mode the TaskBar
+ * holds a single instance of this widget and the task buttons live inside of it.
+ * Buttons are laid out in lines along the toolbar orientation (rows for a horizontal toolbar,
+ * columns for a vertical one) and the widget reports a size hint that makes the toolbar
+ * as thick as needed to show all lines.
+ */
+class TaskBarFlowWidget : public QWidget
+{
+    public:
+        explicit TaskBarFlowWidget(QToolBar* toolBar);
+
+        void insertButton(int index, QToolButton* btn);
+        void removeButton(QToolButton* btn);
+        void moveButton(QToolButton* btn, int index);
+        void setFlow(Qt::Orientation value);
+
+        QSize sizeHint() const override;
+        QSize minimumSizeHint() const override;
+
+    protected:
+        bool event(QEvent* e) override;
+        void resizeEvent(QResizeEvent* e) override;
+
+    private:
+        QSize itemSize(QToolButton* btn) const;
+        int spacing() const;
+
+        /**
+         * @brief Calculates layout of buttons.
+         * @param available Space available along the flow direction.
+         * @param geometries If not null, gets filled with geometries of buttons, in order of the buttons list.
+         * @return Size occupied by buttons, where width is along the flow direction and height is perpendicular to it.
+         */
+        QSize calculate(int available, QList<QRect>* geometries = nullptr) const;
+        void relayout();
+
+        QToolBar* toolBar = nullptr;
+        QList<QToolButton*> buttons;
+        Qt::Orientation flow = Qt::Horizontal;
+        int perpendicularExtent = 0;
+};
+
+TaskBarFlowWidget::TaskBarFlowWidget(QToolBar* toolBar) :
+    QWidget(toolBar), toolBar(toolBar)
+{
+    setFlow(toolBar->orientation());
+}
+
+void TaskBarFlowWidget::insertButton(int index, QToolButton* btn)
+{
+    if (index < 0 || index > buttons.size())
+        index = buttons.size();
+
+    btn->setParent(this);
+    buttons.insert(index, btn);
+    btn->show();
+    relayout();
+    updateGeometry();
+}
+
+void TaskBarFlowWidget::removeButton(QToolButton* btn)
+{
+    buttons.removeOne(btn);
+    relayout();
+    updateGeometry();
+}
+
+void TaskBarFlowWidget::moveButton(QToolButton* btn, int index)
+{
+    int oldIdx = buttons.indexOf(btn);
+    if (oldIdx < 0 || index < 0 || index >= buttons.size() || oldIdx == index)
+        return;
+
+    buttons.move(oldIdx, index);
+    relayout();
+    updateGeometry();
+}
+
+void TaskBarFlowWidget::setFlow(Qt::Orientation value)
+{
+    flow = value;
+    if (flow == Qt::Horizontal)
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    else
+        setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+
+    perpendicularExtent = 0;
+    relayout();
+    updateGeometry();
+}
+
+QSize TaskBarFlowWidget::sizeHint() const
+{
+    // Along the flow: as much as needed to put all buttons in a single line (just like the QToolBar would ask for).
+    // Perpendicular to the flow: as much as needed for all lines at the current size.
+    QSize singleLine = calculate(INT_MAX);
+    int perp = perpendicularExtent > 0 ? perpendicularExtent : singleLine.height();
+    return (flow == Qt::Horizontal) ? QSize(singleLine.width(), perp) : QSize(perp, singleLine.width());
+}
+
+QSize TaskBarFlowWidget::minimumSizeHint() const
+{
+    // Minimum is a single line with a single button. Additional lines are requested only by the sizeHint(),
+    // so they never enlarge the minimum size of the main window (which would make the window grow).
+    int maxAlong = 0;
+    int minPerp = 0;
+    for (QToolButton* btn : buttons)
+    {
+        QSize s = itemSize(btn);
+        maxAlong = qMax(maxAlong, (flow == Qt::Horizontal) ? s.width() : s.height());
+        minPerp = qMax(minPerp, (flow == Qt::Horizontal) ? s.height() : s.width());
+    }
+
+    return (flow == Qt::Horizontal) ? QSize(maxAlong, minPerp) : QSize(minPerp, maxAlong);
+}
+
+bool TaskBarFlowWidget::event(QEvent* e)
+{
+    if (e->type() == QEvent::LayoutRequest)
+    {
+        // One of buttons changed its size hint (i.e. window was renamed, or icon size was changed).
+        relayout();
+        updateGeometry();
+        return true;
+    }
+    return QWidget::event(e);
+}
+
+void TaskBarFlowWidget::resizeEvent(QResizeEvent* e)
+{
+    QWidget::resizeEvent(e);
+    int oldExtent = perpendicularExtent;
+    relayout();
+    if (perpendicularExtent != oldExtent)
+        updateGeometry();
+}
+
+QSize TaskBarFlowWidget::itemSize(QToolButton* btn) const
+{
+    return btn->sizeHint().boundedTo(btn->maximumSize()).expandedTo(btn->minimumSize());
+}
+
+int TaskBarFlowWidget::spacing() const
+{
+    return toolBar->style()->pixelMetric(QStyle::PM_ToolBarItemSpacing, nullptr, toolBar);
+}
+
+QSize TaskBarFlowWidget::calculate(int available, QList<QRect>* geometries) const
+{
+    bool horizontal = (flow == Qt::Horizontal);
+    int space = spacing();
+
+    // Split buttons into lines
+    QList<QList<int>> lines;
+    QList<int> lineThickness;
+    QList<int> currentLine;
+    int pos = 0;
+    int thickness = 0;
+    for (int i = 0; i < buttons.size(); i++)
+    {
+        QSize s = itemSize(buttons[i]);
+        int length = horizontal ? s.width() : s.height();
+        if (!currentLine.isEmpty() && pos + length > available)
+        {
+            lines << currentLine;
+            lineThickness << thickness;
+            currentLine.clear();
+            pos = 0;
+            thickness = 0;
+        }
+        currentLine << i;
+        pos += length + space;
+        thickness = qMax(thickness, horizontal ? s.height() : s.width());
+    }
+    if (!currentLine.isEmpty())
+    {
+        lines << currentLine;
+        lineThickness << thickness;
+    }
+
+    // Place buttons. Each button gets full thickness of its line, so lines look even.
+    if (geometries)
+    {
+        geometries->clear();
+        for (int i = 0; i < buttons.size(); i++)
+            *geometries << QRect();
+    }
+
+    int perpPos = 0;
+    int maxAlong = 0;
+    for (int lineIdx = 0; lineIdx < lines.size(); lineIdx++)
+    {
+        int along = 0;
+        int lineTh = lineThickness[lineIdx];
+        for (int i : lines[lineIdx])
+        {
+            QSize s = itemSize(buttons[i]);
+            int length = horizontal ? s.width() : s.height();
+            if (geometries)
+                (*geometries)[i] = horizontal ? QRect(along, perpPos, length, lineTh) : QRect(perpPos, along, lineTh, length);
+
+            along += length + space;
+        }
+        maxAlong = qMax(maxAlong, along - space);
+        perpPos += lineTh + space;
+    }
+
+    int perp = lines.isEmpty() ? 0 : (perpPos - space);
+    return QSize(maxAlong, perp);
+}
+
+void TaskBarFlowWidget::relayout()
+{
+    // Until the toolbar assigns the geometry, the widget has a default size, which has nothing to do with the space
+    // available in the toolbar. Laying out buttons for that size would request a lot of lines.
+    int available = (flow == Qt::Horizontal) ? width() : height();
+    if (!testAttribute(Qt::WA_Resized) || available <= 0)
+        available = INT_MAX;
+
+    QList<QRect> geometries;
+    QSize occupied = calculate(available, &geometries);
+    for (int i = 0; i < buttons.size(); i++)
+        buttons[i]->setGeometry(geometries[i]);
+
+    perpendicularExtent = occupied.height();
+}
 
 TaskBar::TaskBar(const QString& title, QWidget *parent) :
     QToolBar(title, parent), taskGroup(this)
@@ -27,17 +260,22 @@ TaskBar::TaskBar(QWidget* parent) :
 
 QAction* TaskBar::addTask(const QIcon& icon, const QString& text)
 {
-    // A workaround for QAction button (or QToolBar itself) that takes over (and doesn't propagate) mousePressEvent.
-    QAction* action = QToolBar::addAction(icon, text);
+    QAction* action = nullptr;
+    if (wrapping)
+    {
+        action = new QAction(icon, text, this);
+        flowWidget->insertButton(-1, createWrappedButton(action));
+    }
+    else
+        action = QToolBar::addAction(icon, text);
+
     tasks << action;
     QToolButton* btn = getToolButton(action);
     if (!btn)
         return action;
 
-    btn->setMaximumWidth(400);
-    btn->installEventFilter(this);
+    setupTaskButton(btn);
     taskGroup.addAction(action);
-    connect(btn, SIGNAL(pressed()), this, SLOT(mousePressed()));
     return action;
 }
 
@@ -45,7 +283,126 @@ void TaskBar::removeTask(QAction* action)
 {
     tasks.removeOne(action);
     taskGroup.removeAction(action);
-    removeAction(action);
+    if (wrapping)
+    {
+        QToolButton* btn = wrappedButtons.take(action);
+        if (btn)
+        {
+            flowWidget->removeButton(btn);
+            btn->hide();
+            btn->deleteLater(); // might be called from within the button's event (i.e. middle-click closing)
+        }
+    }
+    else
+        removeAction(action);
+}
+
+bool TaskBar::isWrapping() const
+{
+    return wrapping;
+}
+
+void TaskBar::setWrapping(bool enabled)
+{
+    if (enabled == wrapping)
+        return;
+
+    if (enabled)
+    {
+        if (!flowWidget)
+        {
+            flowWidget = new TaskBarFlowWidget(this);
+            flowWidgetAction = addWidget(flowWidget);
+            connect(this, &QToolBar::orientationChanged, flowWidget, [this](Qt::Orientation o)
+            {
+                flowWidget->setFlow(o);
+            });
+        }
+
+        for (QAction* task : tasks)
+            removeAction(task);
+
+        wrapping = true;
+        for (QAction* task : tasks)
+        {
+            QToolButton* btn = createWrappedButton(task);
+            flowWidget->insertButton(-1, btn);
+            setupTaskButton(btn);
+        }
+        flowWidget->setFlow(orientation());
+        flowWidgetAction->setVisible(true);
+    }
+    else
+    {
+        flowWidgetAction->setVisible(false);
+        for (QAction* task : tasks)
+        {
+            QToolButton* btn = wrappedButtons.take(task);
+            if (!btn)
+                continue;
+
+            flowWidget->removeButton(btn);
+            btn->hide();
+            btn->deleteLater();
+        }
+
+        wrapping = false;
+        for (QAction* task : tasks)
+        {
+            addAction(task);
+            QToolButton* btn = getToolButton(task);
+            if (btn)
+                setupTaskButton(btn);
+        }
+    }
+}
+
+QToolButton* TaskBar::createWrappedButton(QAction* task)
+{
+    // Mimics buttons created by QToolBar for its actions.
+    QToolButton* btn = new QToolButton(flowWidget);
+    btn->setAutoRaise(true);
+    btn->setFocusPolicy(Qt::NoFocus);
+    btn->setIconSize(iconSize());
+    btn->setToolButtonStyle(toolButtonStyle());
+    btn->setDefaultAction(task);
+    connect(this, &QToolBar::iconSizeChanged, btn, &QToolButton::setIconSize);
+    connect(this, &QToolBar::toolButtonStyleChanged, btn, &QToolButton::setToolButtonStyle);
+    wrappedButtons[task] = btn;
+    return btn;
+}
+
+void TaskBar::setupTaskButton(QToolButton* btn)
+{
+    // A workaround for QAction button (or QToolBar itself) that takes over (and doesn't propagate) mousePressEvent.
+    btn->setMaximumWidth(400);
+    btn->installEventFilter(this);
+    connect(btn, SIGNAL(pressed()), this, SLOT(mousePressed()), Qt::UniqueConnection);
+}
+
+QRect TaskBar::getTaskRect(QAction* task)
+{
+    QToolButton* btn = getToolButton(task);
+    if (!btn)
+        return QRect();
+
+    return QRect(btn->mapTo(this, QPoint(0, 0)), btn->size());
+}
+
+QAction* TaskBar::getTaskAt(const QPoint& position)
+{
+    if (!wrapping)
+    {
+        QAction* action = actionAt(position);
+        return tasks.contains(action) ? action : nullptr;
+    }
+
+    for (QAction* task : tasks)
+    {
+        if (getTaskRect(task).contains(position))
+            return task;
+    }
+    return nullptr;
 }
 
 QList<QAction*> TaskBar::getTasks() const
@@ -73,7 +430,7 @@ void TaskBar::init()
 void TaskBar::mousePressed()
 {
     dragStartPosition = mapFromGlobal(QCursor::pos());
-    dragStartTask = actionAt(dragStartPosition);
+    dragStartTask = getTaskAt(dragStartPosition);
     if (dragStartTask)
         dragStartTask->trigger();
 }
@@ -157,15 +514,37 @@ void TaskBar::initContextMenu(ExtActionContainer* mainWin)
     taskMenu->addSeparator();
     taskMenu->addAction(mainWin->getAction(MainWindow::RESTORE_WINDOW));
     taskMenu->addAction(mainWin->getAction(MainWindow::RENAME_WINDOW));
+    taskMenu->addSeparator();
+
+    wrapAction = new QAction(tr("Wrap window list into multiple rows"), this);
+    wrapAction->setCheckable(true);
+    connect(wrapAction, &QAction::toggled, this, [](bool checked)
+    {
+        CFG_UI.General.WrapWindowList.set(checked);
+    });
+    taskMenu->addAction(wrapAction);
 
     CONFLICTING_MENU_HOTKEY_WORKAROUND(taskMenu, QKeySequence::Close, MAINWINDOW->getAction(MainWindow::Action::CLOSE_WINDOW));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(taskBarMenuRequested(QPoint)));
+    connect(CFG_UI.General.WrapWindowList, SIGNAL(changed(QVariant)), this, SLOT(applyWrapConfig()));
+    applyWrapConfig();
+}
+
+void TaskBar::applyWrapConfig()
+{
+    bool enabled = CFG_UI.General.WrapWindowList.get();
+    if (wrapAction)
+    {
+        QSignalBlocker blocker(wrapAction);
+        wrapAction->setChecked(enabled);
+    }
+    setWrapping(enabled);
 }
 
 void TaskBar::taskBarMenuRequested(const QPoint &p)
 {
 
-    QAction* task = actionAt(p);
+    QAction* task = getTaskAt(p);
     bool taskClicked = (task != nullptr);
     if (taskClicked)
         task->trigger();
@@ -176,11 +555,56 @@ void TaskBar::taskBarMenuRequested(const QPoint &p)
 
 QToolButton* TaskBar::getToolButton(QAction* action)
 {
+    if (wrapping)
+        return wrappedButtons.value(action);
+
     return dynamic_cast<QToolButton*>(widgetForAction(action));
 }
 
 QAction* TaskBar::getNextClosestAction(const QPoint& position)
 {
+    if (wrapping)
+    {
+        // Tasks are laid out in multiple lines (rows, or columns for vertical orientation).
+        // First find the line closest to the position, then the first task in that line that begins after the position.
+        // If there is none, the first task of the next line is the closest one.
+        bool horizontal = (orientation() == Qt::Horizontal);
+        int perpPos = horizontal ? position.y() : position.x();
+        int alongPos = horizontal ? position.x() : position.y();
+        int lineStart = -1;
+        int bestDistance = INT_MAX;
+        for (QAction* task : tasks)
+        {
+            QRect r = getTaskRect(task);
+            if (r.isNull())
+                continue;
+
+            int start = horizontal ? r.top() : r.left();
+            int end = horizontal ? r.bottom() : r.right();
+            int distance = (perpPos < start) ? (start - perpPos) : ((perpPos > end) ? (perpPos - end) : 0);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                lineStart = start;
+            }
+        }
+
+        for (QAction* task : tasks)
+        {
+            QRect r = getTaskRect(task);
+            if (r.isNull())
+                continue;
+
+            int start = horizontal ? r.top() : r.left();
+            if (start > lineStart)
+                return task;
+
+            if (start == lineStart && (horizontal ? r.x() : r.y()) >= alongPos)
+                return task;
+        }
+        return nullptr;
+    }
+
     if (orientation() == Qt::Horizontal)
     {
         for (QAction*& action : tasks)
@@ -287,31 +711,45 @@ void TaskBar::dragTaskTo(QAction* task, int positionIndex)
 
     dragCurrentIndex = positionIndex;
 
-    removeAction(task);
+    int oldIdx = tasks.indexOf(task);
+    if (oldIdx < 0)
+        return;
 
+    // The positionIndex points to the task that the moved task should be placed just before.
+    // If we move from left to right, it actually points to 1 position after,
+    // so to get the precise position index on the list, we deduct 1 from the index.
+    int newTaskIdx;
     if (positionIndex >= tasks.size())
-    {
-        addAction(task);
-        tasks.removeOne(task);
-        tasks << task;
-    }
+        newTaskIdx = tasks.size() - 1;
     else
+        newTaskIdx = (positionIndex > oldIdx) ? (positionIndex - 1) : positionIndex;
+
+    if (oldIdx == newTaskIdx)
+        return;
+
+    tasks.move(oldIdx, newTaskIdx);
+    updateTaskPosition(task);
+}
+
+void TaskBar::updateTaskPosition(QAction* task)
+{
+    int idx = tasks.indexOf(task);
+    if (wrapping)
     {
-        int oldIdx = tasks.indexOf(task);
-
-        // If we move from left to right, the positionIndex actually points to 1 position after,
-        // so insertAction() can expect its "before action" first argument.
-        // Although at this step we want precise position index to move the task on the list,
-        // so if this is movement from left to right, we deduct 1 from the index.
-        int newTaskIdx = (positionIndex > oldIdx) ? (positionIndex - 1) : positionIndex;
-        if (oldIdx == newTaskIdx)
-            return;
-
-        insertAction(tasks.at(positionIndex), task);
-        tasks.move(oldIdx, newTaskIdx);
+        flowWidget->moveButton(wrappedButtons.value(task), idx);
+        return;
     }
 
-    connect(getToolButton(task), SIGNAL(pressed()), this, SLOT(mousePressed()));
+    removeAction(task);
+    if (idx + 1 < tasks.size())
+        insertAction(tasks.at(idx + 1), task);
+    else
+        addAction(task);
+
+    // Toolbar creates a new button for re-inserted action
+    QToolButton* btn = getToolButton(task);
+    if (btn)
+        setupTaskButton(btn);
 }
 
 QMimeData* TaskBar::generateMimeData()
@@ -323,7 +761,8 @@ QMimeData* TaskBar::generateMimeData()
 
 int TaskBar::getDropPositionIndex(QAction* task, const QPoint& position)
 {
-    QAction* action = actionAt(position);
+    QAction* action = getTaskAt(position);
+    bool overTask = (action != nullptr);
     if (!action)
         action = getNextClosestAction(position);
 
@@ -335,20 +774,25 @@ int TaskBar::getDropPositionIndex(QAction* task, const QPoint& position)
 
     int newIdx = tasks.indexOf(action);
 
-    QToolButton* btn = getToolButton(action);
+    // With multiple lines the closest task may be in the next line, so its coordinates cannot be compared with position.
+    // Not being over any task, we just place the dragged task before the closest one.
+    if (wrapping && !overTask)
+        return newIdx;
+
+    QRect btnRect = getTaskRect(action);
     int actionBeginPos;
     int actionEndPos;
     int newPos;
     if (orientation() == Qt::Horizontal)
     {
-        actionBeginPos = btn->x();
-        actionEndPos = btn->x() + btn->width();
+        actionBeginPos = btnRect.x();
+        actionEndPos = btnRect.x() + btnRect.width();
         newPos = position.x();
     }
     else
     {
-        actionBeginPos = btn->y();
-        actionEndPos = btn->y() + btn->height();
+        actionBeginPos = btnRect.y();
+        actionEndPos = btnRect.y() + btnRect.height();
         newPos = position.y();
     }
 

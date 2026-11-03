@@ -4,11 +4,13 @@
 #include "gui_global.h"
 #include <QToolBar>
 #include <QActionGroup>
+#include <QHash>
 
 class QMimeData;
 class QToolButton;
 class QRubberBand;
 class ExtActionContainer;
+class TaskBarFlowWidget;
 
 // TODO enclose task<->mdiWindow relation inside a task class and make it managed by taskbar, not by mdiarea
 class GUI_API_EXPORT TaskBar : public QToolBar
@@ -26,6 +28,8 @@ class GUI_API_EXPORT TaskBar : public QToolBar
         QAction* getActiveTask() const;
         QAction* getNextTask(QAction* from = nullptr) const;
         QAction* getPrevTask(QAction* from = nullptr) const;
+        bool isWrapping() const;
+        void setWrapping(bool enabled);
 
         static bool hasTaskBarItem(const QMimeData* data);
 
@@ -41,6 +45,11 @@ class GUI_API_EXPORT TaskBar : public QToolBar
         void init();
         bool handleMouseMoveEvent(QMouseEvent* event);
         QToolButton* getToolButton(QAction* action);
+        QToolButton* createWrappedButton(QAction* task);
+        void setupTaskButton(QToolButton* btn);
+        QRect getTaskRect(QAction* task);
+        QAction* getTaskAt(const QPoint& position);
+        void updateTaskPosition(QAction* task);
         QAction* getNextClosestAction(const QPoint& position);
         void dragTaskTo(QAction* task, const QPoint& position);
         void dragTaskTo(QAction* task, int positionIndex);
@@ -64,6 +73,11 @@ class GUI_API_EXPORT TaskBar : public QToolBar
         int dragStartIndex;
         int dragCurrentIndex;
         QMenu* taskMenu = nullptr;
+        QAction* wrapAction = nullptr;
+        bool wrapping = false;
+        TaskBarFlowWidget* flowWidget = nullptr;
+        QAction* flowWidgetAction = nullptr;
+        QHash<QAction*, QToolButton*> wrappedButtons;
 
     public slots:
         void nextTask();
@@ -76,6 +90,7 @@ class GUI_API_EXPORT TaskBar : public QToolBar
     private slots:
         void taskBarMenuRequested(const QPoint& p);
         void mousePressed();
+        void applyWrapConfig();
 };
 
 #endif // TASKBAR_H

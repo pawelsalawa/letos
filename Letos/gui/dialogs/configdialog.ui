@@ -2864,6 +2864,28 @@
                 </widget>
                </item>
                <item>
+                <widget class="QGroupBox" name="windowListGrp">
+                 <property name="title">
+                  <string>Window list</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="windowListLayout">
+                  <item>
+                   <widget class="QCheckBox" name="wrapWindowListCheck">
+                    <property name="toolTip">
+                     <string>&lt;p&gt;When there are more windows open than fit in a single row of the window list, buttons of remaining windows are placed in additional rows (or columns, if the window list is placed vertically), instead of being hidden behind the overflow arrow.&lt;/p&gt;</string>
+                    </property>
+                    <property name="text">
+                     <string>Wrap window list into multiple rows</string>
+                    </property>
+                    <property name="cfg" stdset="0">
+                     <string notr="true">General.WrapWindowList</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
                 <spacer name="verticalSpacer_5">
                  <property name="orientation">
                   <enum>Qt::Orientation::Vertical</enum>

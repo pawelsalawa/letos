@@ -1231,19 +1231,6 @@ La vista es mantindrà tal com està.</translation>
     </message>
   </context>
   <context>
-    <name>T</name>
-    <message>
-      <location filename="../db/abstractdb3.h" line="714"/>
-      <source>The database file &apos;%1&apos; has been modified by a newer version of SQLite (format %2), while the current application supports up to format %3. Some features may not work correctly.</source>
-      <translation>El fitxer de base de dades &apos;%1&apos; ha estat modificat per una versió més nova de SQLite (format %2), mentre que l&apos;aplicació actual només admet fins al format %3. És possible que algunes funcions no funcionin correctament.</translation>
-    </message>
-    <message>
-      <location filename="../db/abstractdb3.h" line="1013"/>
-      <source>Registered default collation on demand, under name: %1</source>
-      <translation>S&apos;ha registrat la col·lació per defecte sota demanda, amb el nom: %1</translation>
-    </message>
-  </context>
-  <context>
     <name>UpdateManager</name>
     <message>
       <location filename="../services/updatemanager.cpp" line="104"/>

@@ -1231,19 +1231,6 @@ The view will remain as it is.</source>
     </message>
   </context>
   <context>
-    <name>T</name>
-    <message>
-      <location filename="../db/abstractdb3.h" line="714"/>
-      <source>The database file &apos;%1&apos; has been modified by a newer version of SQLite (format %2), while the current application supports up to format %3. Some features may not work correctly.</source>
-      <translation>데이터베이스 파일 &apos;%1&apos;이 최신 버전의 SQLite (형식 %2)에 의해 수정되었지만, 현재 애플리케이션은 형식 %3까지만 지원합니다. 일부 기능이 올바르게 작동하지 않을 수 있습니다.</translation>
-    </message>
-    <message>
-      <location filename="../db/abstractdb3.h" line="1013"/>
-      <source>Registered default collation on demand, under name: %1</source>
-      <translation>요청에 따라 기본 콜레이션을 다음 이름으로 등록했습니다: %1</translation>
-    </message>
-  </context>
-  <context>
     <name>UpdateManager</name>
     <message>
       <location filename="../services/updatemanager.cpp" line="104"/>

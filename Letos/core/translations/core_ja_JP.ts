@@ -1231,19 +1231,6 @@ The view will remain as it is.</source>
     </message>
   </context>
   <context>
-    <name>T</name>
-    <message>
-      <location filename="../db/abstractdb3.h" line="714"/>
-      <source>The database file &apos;%1&apos; has been modified by a newer version of SQLite (format %2), while the current application supports up to format %3. Some features may not work correctly.</source>
-      <translation>データベースファイル &apos;%1&apos; は、現在のアプリケーションが対応している形式 %3 より新しいバージョンの SQLite（形式 %2）によって変更されています。一部の機能が正しく動作しない可能性があります。</translation>
-    </message>
-    <message>
-      <location filename="../db/abstractdb3.h" line="1013"/>
-      <source>Registered default collation on demand, under name: %1</source>
-      <translation>必要に応じて既定の照合順序を登録しました。名前: %1</translation>
-    </message>
-  </context>
-  <context>
     <name>UpdateManager</name>
     <message>
       <location filename="../services/updatemanager.cpp" line="104"/>

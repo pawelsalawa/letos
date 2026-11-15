@@ -1231,19 +1231,6 @@ Vyn kommer att förbli som den är.</translation>
     </message>
   </context>
   <context>
-    <name>T</name>
-    <message>
-      <location filename="../db/abstractdb3.h" line="714"/>
-      <source>The database file &apos;%1&apos; has been modified by a newer version of SQLite (format %2), while the current application supports up to format %3. Some features may not work correctly.</source>
-      <translation>Databasfilen &apos;%1&apos; har ändrats av en nyare version av SQLite (format %2), medan det aktuella programmet stöder upp till format %3. Vissa funktioner kanske inte fungerar korrekt.</translation>
-    </message>
-    <message>
-      <location filename="../db/abstractdb3.h" line="1013"/>
-      <source>Registered default collation on demand, under name: %1</source>
-      <translation>Registrerade standardkollation på begäran, under namnet: %1</translation>
-    </message>
-  </context>
-  <context>
     <name>UpdateManager</name>
     <message>
       <location filename="../services/updatemanager.cpp" line="104"/>

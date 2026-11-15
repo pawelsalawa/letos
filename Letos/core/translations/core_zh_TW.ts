@@ -1231,19 +1231,6 @@ view 將保留原始內容</translation>
     </message>
   </context>
   <context>
-    <name>T</name>
-    <message>
-      <location filename="../db/abstractdb3.h" line="714"/>
-      <source>The database file &apos;%1&apos; has been modified by a newer version of SQLite (format %2), while the current application supports up to format %3. Some features may not work correctly.</source>
-      <translation>資料庫檔案 &apos;%1&apos; 已由較新版本的 SQLite（格式 %2）修改，而目前應用程式最高支援格式 %3。某些功能可能無法正確運作。</translation>
-    </message>
-    <message>
-      <location filename="../db/abstractdb3.h" line="1013"/>
-      <source>Registered default collation on demand, under name: %1</source>
-      <translation>已依需求註冊預設定序，名稱為：%1</translation>
-    </message>
-  </context>
-  <context>
     <name>UpdateManager</name>
     <message>
       <location filename="../services/updatemanager.cpp" line="104"/>

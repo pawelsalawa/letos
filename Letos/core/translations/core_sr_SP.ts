@@ -1231,19 +1231,6 @@ The view will remain as it is.</source>
     </message>
   </context>
   <context>
-    <name>T</name>
-    <message>
-      <location filename="../db/abstractdb3.h" line="714"/>
-      <source>The database file &apos;%1&apos; has been modified by a newer version of SQLite (format %2), while the current application supports up to format %3. Some features may not work correctly.</source>
-      <translation>Датотека базе података &apos;%1&apos; је измењена новијом верзијом SQLite-а (формат %2), док тренутна апликација подржава до формата %3. Неке функције можда неће радити исправно.</translation>
-    </message>
-    <message>
-      <location filename="../db/abstractdb3.h" line="1013"/>
-      <source>Registered default collation on demand, under name: %1</source>
-      <translation>Подразумевана колација је регистрована на захтев, под називом: %1</translation>
-    </message>
-  </context>
-  <context>
     <name>UpdateManager</name>
     <message>
       <location filename="../services/updatemanager.cpp" line="104"/>

@@ -1231,19 +1231,6 @@ Khung nhìn sẽ được giữ nguyên.</translation>
     </message>
   </context>
   <context>
-    <name>T</name>
-    <message>
-      <location filename="../db/abstractdb3.h" line="714"/>
-      <source>The database file &apos;%1&apos; has been modified by a newer version of SQLite (format %2), while the current application supports up to format %3. Some features may not work correctly.</source>
-      <translation>Tệp cơ sở dữ liệu &apos;%1&apos; đã được sửa đổi bởi phiên bản SQLite mới hơn (định dạng %2), trong khi ứng dụng hiện tại chỉ hỗ trợ đến định dạng %3. Một số tính năng có thể không hoạt động đúng.</translation>
-    </message>
-    <message>
-      <location filename="../db/abstractdb3.h" line="1013"/>
-      <source>Registered default collation on demand, under name: %1</source>
-      <translation>Đã đăng ký đối chiếu mặc định theo yêu cầu, dưới tên: %1</translation>
-    </message>
-  </context>
-  <context>
     <name>UpdateManager</name>
     <message>
       <location filename="../services/updatemanager.cpp" line="104"/>

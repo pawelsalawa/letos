@@ -1231,19 +1231,6 @@ Widok pozostanie nienaruszony.</translation>
     </message>
   </context>
   <context>
-    <name>T</name>
-    <message>
-      <location filename="../db/abstractdb3.h" line="714"/>
-      <source>The database file &apos;%1&apos; has been modified by a newer version of SQLite (format %2), while the current application supports up to format %3. Some features may not work correctly.</source>
-      <translation>Plik bazy danych &apos;%1&apos; został zmodyfikowany przez nowszą wersję SQLite (format %2), podczas gdy bieżąca aplikacja obsługuje formaty do %3. Niektóre funkcje mogą nie działać poprawnie.</translation>
-    </message>
-    <message>
-      <location filename="../db/abstractdb3.h" line="1013"/>
-      <source>Registered default collation on demand, under name: %1</source>
-      <translation>Zarejestrowano domyślną sekwencję porządkowania na żądanie, pod nazwą: %1</translation>
-    </message>
-  </context>
-  <context>
     <name>UpdateManager</name>
     <message>
       <location filename="../services/updatemanager.cpp" line="104"/>

@@ -1231,19 +1231,6 @@ A nézet változatlan marad.</translation>
     </message>
   </context>
   <context>
-    <name>T</name>
-    <message>
-      <location filename="../db/abstractdb3.h" line="714"/>
-      <source>The database file &apos;%1&apos; has been modified by a newer version of SQLite (format %2), while the current application supports up to format %3. Some features may not work correctly.</source>
-      <translation>A &apos;%1&apos; adatbázisfájlt az SQLite egy újabb verziója módosította (%2 formátum), míg a jelenlegi alkalmazás legfeljebb a %3 formátumot támogatja. Előfordulhat, hogy egyes funkciók nem működnek megfelelően.</translation>
-    </message>
-    <message>
-      <location filename="../db/abstractdb3.h" line="1013"/>
-      <source>Registered default collation on demand, under name: %1</source>
-      <translation>Az alapértelmezett rendezési szabály igény szerint regisztrálva, a következő néven: %1</translation>
-    </message>
-  </context>
-  <context>
     <name>UpdateManager</name>
     <message>
       <location filename="../services/updatemanager.cpp" line="104"/>

@@ -4,23 +4,46 @@
 #include <QDebug>
 #include <QTime>
 #include <QIODevice>
+#include <QStringEncoder>
+#include <type_traits>
 
 template <class C>
-bool isCsvSeparator(QList<C>& ahead, const C& theChar, const QStringList& separators)
+void readAhead(QTextStream& data, QList<C>& ahead, int desiredSize)
+{
+    C singleValue;
+    while (!data.atEnd() && ahead.size() < desiredSize)
+    {
+        data >> singleValue;
+        ahead << singleValue;
+        // Complete surrogate pairs so buffered lookahead can be encoded when rewinding.
+        if constexpr (std::is_same_v<C, QChar>)
+        {
+            if (singleValue.isHighSurrogate() && !data.atEnd())
+            {
+                data >> singleValue;
+                ahead << singleValue;
+            }
+        }
+    }
+}
+
+template <class C>
+bool isCsvSeparator(QTextStream& data, QList<C>& ahead, const C& theChar, const QStringList& separators)
 {
     for (const QString& sep : separators)
-        if (isCsvSeparator(ahead, theChar, sep))
+        if (isCsvSeparator(data, ahead, theChar, sep))
             return true;
 
     return false;
 }
 
 template <class C>
-bool isCsvSeparator(QList<C>& ahead, const C& theChar, const QString& singleSeparator)
+bool isCsvSeparator(QTextStream& data, QList<C>& ahead, const C& theChar, const QString& singleSeparator)
 {
     if (singleSeparator[0] != theChar)
         return false;
 
+    readAhead(data, ahead, singleSeparator.size() - 1);
     typename QList<C>::const_iterator aheadIter = ahead.begin();
     int singleSeparatorSize = singleSeparator.size();
     int i = 1;
@@ -40,40 +63,29 @@ bool isCsvSeparator(QList<C>& ahead, const C& theChar, const QString& singleSepa
 }
 
 template <class C>
-bool isCsvColumnSeparator(QList<C>& ahead, const C& theChar, const CsvFormat& format)
+bool isCsvColumnSeparator(QTextStream& data, QList<C>& ahead, const C& theChar, const CsvFormat& format)
 {
     if (!format.strictColumnSeparator)
         return format.columnSeparator.contains(theChar);
 
     // Strict checking (characters in defined order make a separator)
     if (format.multipleColumnSeparators)
-        return isCsvSeparator(ahead, theChar, format.columnSeparators);
+        return isCsvSeparator(data, ahead, theChar, format.columnSeparators);
 
-    return isCsvSeparator(ahead, theChar, format.columnSeparator);
+    return isCsvSeparator(data, ahead, theChar, format.columnSeparator);
 }
 
 template <class C>
-bool isCsvRowSeparator(QList<C>& ahead, const C& theChar, const CsvFormat& format)
+bool isCsvRowSeparator(QTextStream& data, QList<C>& ahead, const C& theChar, const CsvFormat& format)
 {
     if (!format.strictRowSeparator)
         return format.rowSeparator.contains(theChar);
 
     // Strict checking (characters in defined order make a separator)
     if (format.multipleRowSeparators)
-        return isCsvSeparator(ahead, theChar, format.rowSeparators);
+        return isCsvSeparator(data, ahead, theChar, format.rowSeparators);
 
-    return isCsvSeparator(ahead, theChar, format.rowSeparator);
-}
-
-template <class C>
-void readAhead(QTextStream& data, QList<C>& ahead, int desiredSize)
-{
-    C singleValue;
-    while (!data.atEnd() && ahead.size() < desiredSize)
-    {
-        data >> singleValue;
-        ahead << singleValue;
-    }
+    return isCsvSeparator(data, ahead, theChar, format.rowSeparator);
 }
 
 template <class T, class C>
@@ -81,7 +93,6 @@ void typedDeserializeInternal(QTextStream& data, const CsvFormat& format, QList<
 {
     bool quotes = false;
     bool sepAsLast = false;
-    int separatorMaxAhead = qMax(format.maxColumnSeparatorLength, format.maxRowSeparatorLength) - 1;
     T field = "";
     field.reserve(3);
     C theChar;
@@ -128,14 +139,13 @@ void typedDeserializeInternal(QTextStream& data, const CsvFormat& format, QList<
         }
         else if (!quotes)
         {
-            readAhead(data, ahead, separatorMaxAhead);
-            if (isCsvColumnSeparator(ahead, theChar, format))
+            if (isCsvColumnSeparator(data, ahead, theChar, format))
             {
                 *cells << field;
                 field.truncate(0);
                 sepAsLast = true;
             }
-            else if (isCsvRowSeparator(ahead, theChar, format))
+            else if (isCsvRowSeparator(data, ahead, theChar, format))
             {
                 *cells << field;
                 field.truncate(0);
@@ -170,7 +180,18 @@ void typedDeserializeInternal(QTextStream& data, const CsvFormat& format, QList<
     }
     else if (!ahead.isEmpty())
     {
-        data.seek(data.pos() - 1);
+        QString buffered;
+        for (const C& character : ahead)
+            buffered += character;
+
+        // String streams use UTF-16 offsets; device streams use encoded byte offsets.
+        qint64 bufferedSize = buffered.size();
+        if (data.device())
+        {
+            QByteArray encoded = QStringEncoder(data.encoding())(buffered);
+            bufferedSize = encoded.size();
+        }
+        data.seek(data.pos() - bufferedSize);
     }
 }
 

@@ -93,7 +93,7 @@ void UpdateManager::handleUpdatesResponse(QNetworkReply* response, bool enforced
 #elif defined(Q_OS_OSX)
     QString url = json["mac"].toString();
 #else
-    QString url = jsonQString();
+    QString url = LETOS->getHomePage();
 #endif
 
     emit updateAvailable(version, url);
